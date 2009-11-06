@@ -28,6 +28,7 @@ except ImportError:
 
 from urllib import urlencode
 from httplib2 import Http
+from oauth import oauth
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 from yql.oauth_client import YOAuthClient
@@ -49,44 +50,67 @@ class YQL(object):
         self.secret = shared_secret
 
 
-    def access_protected(self, url):
-    
-        client = YOAuthClient(self.api_key, self.secret, url)
-        consumer = oauth.OAuthConsumer(CONSUMER_KEY, CONSUMER_SECRET)
+    def two_legged(self, resource_url, parameters=None):
+        client = YOAuthClient(self.api_key, self.secret, resource_url)
+        consumer = oauth.OAuthConsumer(self.api_key, self.secret)
+        request = oauth.OAuthRequest.from_consumer_and_token(
+            consumer, 
+            token=None, 
+            http_method='GET', 
+            http_url=resource_url, 
+            parameters=parameters
+        )
+        signature_method = oauth.OAuthSignatureMethod_HMAC_SHA1()
+        request.sign_request(signature_method, consumer, None)
+        return client.access_resource(request)
+
+
+    def three_legged(self, resource_url, parameters=None, callback_url=None):
+        
+        if callback_url is None:
+            callback_url = 'oob'
+
+        client = YOAuthClient(self.api_key, self.secret, resource_url)
+        consumer = oauth.OAuthConsumer(self.api_key, self.secret)
+        
         signature_method_plaintext = oauth.OAuthSignatureMethod_PLAINTEXT()
         signature_method_hmac_sha1 = oauth.OAuthSignatureMethod_HMAC_SHA1()
-        pause()
 
         # get request token
         oauth_request = oauth.OAuthRequest.from_consumer_and_token(
-             consumer, callback=CALLBACK_URL, http_url=client.request_token_url)
+             consumer, callback=callback_url, http_url=client.request_token_url)
 
         oauth_request.sign_request(signature_method_plaintext, consumer, None)
         token = client.fetch_request_token(oauth_request)
 
         oauth_request = oauth.OAuthRequest.from_token_and_callback(
                                  token=token, http_url=client.authorization_url)
+      
+        verifier = None 
         
-        # this will actually occur only on some callback
+        # Three-legged Auth only
+        #this will actually occur only on some callback
         response = client.authorize_token(oauth_request)
-        
+            
         # sad way to get the verifier
         query = urlparse.urlparse(response)[4]
         params = cgi.parse_qs(query, keep_blank_values=False)
+            
         verifier = params['oauth_verifier'][0]
 
         # get access token
         oauth_request = oauth.OAuthRequest.from_consumer_and_token(consumer,
-               token=token, verifier=verifier, http_url=client.access_token_url)
+                   token=token, verifier=verifier, http_url=client.access_token_url)
 
         oauth_request.sign_request(signature_method_plaintext, consumer, token)
         token = client.fetch_access_token(oauth_request)
-
+        print token
+        
         # access some protected resources
-        parameters = {'file': 'vacation.jpg', 'size': 'original'} # resource specific params
+        #parameters = {'file': 'vacation.jpg', 'size': 'original'} # resource specific params
         oauth_request = oauth.OAuthRequest.from_consumer_and_token(consumer, 
                                 token=token, http_method='POST', 
-                                http_url=RESOURCE_URL, parameters=parameters)
+                                http_url=resource_url, parameters=parameters)
         
         oauth_request.sign_request(signature_method_hmac_sha1, consumer, token)
         params = client.access_resource(oauth_request)
@@ -109,25 +133,28 @@ class YQL(object):
         params = {}
         params['q'] = query
         params['format'] = kwargs.get('format') or  'json'
-       
+        
+        query_string = urlencode(params)
+        print "uri", uri
+
         # Need to carry out if we are using the private endpoint
-        if uri == 'private':
-            resp = self.access_protected('%s?%s' % (uri, query_string))
+        if endpoint == 'private':
+            content = self.two_legged('%s?%s' % (uri, query_string), parameters=params)
+            return content
         else:
             h = Http()
-            query_string = urlencode(params)
             resp, content = h.request('%s?%s' % (uri, query_string), "POST", query_string)
 
-        if resp.get('status') == '200':
-            return json.loads(content)
+            if resp.get('status') == '200':
+                return json.loads(content)
             
 
 if __name__ == "__main__":
 
-    yql = YQL()
-    print "Making Public Query"
-    query = 'select * from flickr.photos.search where text="panda" limit 3';
-    print yql.execute(query)
+    # yql = YQL()
+    # print "Making Public Query"
+    # query = 'select * from flickr.photos.search where text="panda" limit 3';
+    # print yql.execute(query)
    
     try:
         print "Making Private Call"
