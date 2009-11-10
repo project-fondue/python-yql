@@ -13,6 +13,8 @@ from yql import YQL
 
 TODO: Ensure Two and three legged OAuth works
 TODO: Add support for parameterized Queries http://developer.yahoo.com/yql/guide/var_substitution.html
+TODO: Add support for env parmeter which loads tables
+
 
 """
 
@@ -50,19 +52,13 @@ class YQL(object):
         self.secret = shared_secret
 
 
-    def two_legged(self, resource_url, parameters=None):
-        client = YOAuthClient(self.api_key, self.secret, resource_url)
+    def two_legged_request(self, resource_url, parameters=None):
+        client = YOAuthClient(self.api_key, self.secret)
         consumer = oauth.OAuthConsumer(self.api_key, self.secret)
-        request = oauth.OAuthRequest.from_consumer_and_token(
-            consumer, 
-            token=None, 
-            http_method='GET', 
-            http_url=resource_url, 
-            parameters=parameters
-        )
+        request = oauth.OAuthRequest.from_consumer_and_token(consumer, http_url=resource_url, parameters=parameters)
         signature_method = oauth.OAuthSignatureMethod_HMAC_SHA1()
         request.sign_request(signature_method, consumer, None)
-        return client.access_resource(request)
+        return request
 
 
     def three_legged(self, resource_url, parameters=None, callback_url=None):
@@ -113,7 +109,9 @@ class YQL(object):
                                 http_url=resource_url, parameters=parameters)
         
         oauth_request.sign_request(signature_method_hmac_sha1, consumer, token)
-        params = client.access_resource(oauth_request)
+        
+         
+        
         return params
 
     
@@ -135,26 +133,26 @@ class YQL(object):
         params['format'] = kwargs.get('format') or  'json'
         
         query_string = urlencode(params)
-        print "uri", uri
-
+        h = Http()
+    
         # Need to carry out if we are using the private endpoint
         if endpoint == 'private':
-            content = self.two_legged('%s?%s' % (uri, query_string), parameters=params)
-            return content
+            url = '%s?%s' % (uri, query_string)
+            request = self.two_legged_request(url, parameters=params)
+            resp, content = h.request("%s?%s" % (uri, request.to_postdata()), "GET")
         else:
-            h = Http()
             resp, content = h.request('%s?%s' % (uri, query_string), "POST", query_string)
 
-            if resp.get('status') == '200':
-                return json.loads(content)
+        if resp.get('status') == '200':
+            return json.loads(content)
             
 
 if __name__ == "__main__":
 
-    # yql = YQL()
-    # print "Making Public Query"
-    # query = 'select * from flickr.photos.search where text="panda" limit 3';
-    # print yql.execute(query)
+    yql = YQL()
+    print "Making Public Query"
+    query = 'select * from flickr.photos.search where text="panda" limit 3';
+    print yql.execute(query)
    
     try:
         print "Making Private Call"
