@@ -202,10 +202,10 @@ if __name__ == "__main__":
         query = "SELECT * from geo.places WHERE text='SFO'"
         print y2.execute(query)
         
-        print "Make private query requiring user auth"
-        y3 = YQLThreeLeggedAuth(API_KEY, SECRET)
-        query = 'select * from social.connections where owner_guid=me'
-        print y3.execute(query) 
+        # print "Make private query requiring user auth"
+        # y3 = YQLThreeLeggedAuth(API_KEY, SECRET)
+        # query = 'select * from social.connections where owner_guid=me'
+        # print y3.execute(query) 
 
     except ImportError:
         print "You need a file containing your Secret and API key"
