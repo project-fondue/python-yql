@@ -11,9 +11,6 @@ from yql import YQL
 >>> query = 'select * from flickr.photos.search where text="panda" limit 3';
 >>> yql.execute(query)
 
-TODO: Ensure Two legged OAuth works
-TODO: Ensure Three legged OAuth works
-
 """
 
 import os
@@ -36,12 +33,13 @@ from yql.oauth_client import YOAuthClient
 
 __author__ = 'Stuart Colville'
 __version__ = '0.1'
-__all__=['YQL', 'YQLTwoLeggedAuth', 'YQLThreeLeggedAuth']
+__all__ = ['YQL', 'YQLTwoLeggedAuth', 'YQLThreeLeggedAuth']
 
 
 QUERY_PLACEHOLDER = re.compile(r"= ?@(?P<param>[a-z].*?\b)", re.IGNORECASE)
 
 class YQL(object):
+    """Class for making public YQL queries"""
 
     uri = "http://query.yahooapis.com/v1/public/yql"
 
@@ -64,22 +62,23 @@ class YQL(object):
     def execute(self, query, name_params=None, *args, **kwargs):
         """Execute YQL query"""    
     
-        query_params = self.get_query_params(query, name_params, *args, **kwargs) 
+        query_params = self.get_query_params(
+                                        query, name_params, *args, **kwargs)
         query_string = urlencode(query_params)
         
-        resp, content = self.make_request(query, query_string, query_params)
+        resp, content = self.make_request(query_string, query_params)
         
         if resp.get('status') == '200':
             return json.loads(content)
 
 
-    def make_request(self, query, query_string, query_params):
+    def make_request(self, query_string, query_params):
         """Run the YQL query"""
 
         return self.http.request('%s?%s' % (self.uri, query_string), 
                                                     "POST", query_string)
        
-    def get_query_params(self, query, name_params, *args, **kwargs):
+    def get_query_params(self, query, name_params, **kwargs):
         """Get the query params and validate placeholders"""
 
         query_params = {}
@@ -115,7 +114,8 @@ class YQL(object):
         return query_params     
 
 
-    def get_placeholder_keys(self, query):
+    @staticmethod
+    def get_placeholder_keys(query):
         """Gets the @var placeholders
         
         http://developer.yahoo.com/yql/guide/var_substitution.html
@@ -136,22 +136,22 @@ class YQLTwoLeggedAuth(YQL):
 
     def __init__(self, api_key, shared_secret, httplib2_inst=None):
         """Override init to ensure required args"""
-        super(YQLTwoLeggedAuth, self).__init__(api_key, shared_secret, httplib2_inst)
+        super(YQLTwoLeggedAuth, self).__init__(
+                                    api_key, shared_secret, httplib2_inst)
 
         self.hmac_sha1_signature = oauth.OAuthSignatureMethod_HMAC_SHA1()
     
     def two_legged_request(self, resource_url, parameters=None):
         """Sign a request for two-legged authentication"""
         
-        client = YOAuthClient(self.api_key, self.secret)
         consumer = oauth.OAuthConsumer(self.api_key, self.secret)
         request = oauth.OAuthRequest.from_consumer_and_token(consumer, 
-                                http_url=resource_url, parameters=parameters)
+                               http_url=resource_url, parameters=parameters)
 
         request.sign_request(self.hmac_sha1_signature, consumer, None)
         return request
 
-    def make_request(self, query, query_string, query_params):
+    def make_request(self, query_string, query_params):
         """Sets up and makes the request"""
         url = '%s?%s' % (self.uri, query_string)
         request = self.two_legged_request(url, parameters=query_params)
@@ -189,7 +189,8 @@ class YQLThreeLeggedAuth(YQL):
 
     def __init__(self, api_key, shared_secret, httplib2_inst=None):
         """Override init to ensure required args"""
-        super(YQLThreeLeggedAuth, self).__init__(api_key, shared_secret, httplib2_inst)
+        super(YQLThreeLeggedAuth, self).__init__(
+                                    api_key, shared_secret, httplib2_inst)
 
         self.plaintext_signature = oauth.OAuthSignatureMethod_PLAINTEXT()
         self.hmac_sha1_signature = oauth.OAuthSignatureMethod_HMAC_SHA1()
@@ -213,13 +214,14 @@ class YQLThreeLeggedAuth(YQL):
                                      self.consumer, callback=callback_url, 
                                      http_url=self.client.request_token_url)
         
-        oauth_request.sign_request(self.plaintext_signature, self.consumer, None)
+        oauth_request.sign_request(
+                              self.plaintext_signature, self.consumer, None)
         token = self.client.fetch_request_token(oauth_request)
         
         # Authorize token to get Auth URL
         oauth_request = oauth.OAuthRequest.from_token_and_callback(
-                                          token=token, 
-                                          http_url=self.client.authorization_url)
+                                     token=token, 
+                                     http_url=self.client.authorization_url)
         
         return token, oauth_request.to_url()
     
@@ -250,7 +252,7 @@ class YQLThreeLeggedAuth(YQL):
 
         oauth_request.sign_request(self.plaintext_signature,
                                                self.consumer, request_token)
-        token = self.client.fetch_access_token(oauth_request, verifier)
+        token = self.client.fetch_access_token(oauth_request)
         return token
  
             
@@ -262,7 +264,8 @@ class YQLThreeLeggedAuth(YQL):
         query_string = urlencode(query_params)
 
         if not token:
-            raise ValueError, "Without a token three-legged-auth cannot be carried out"
+            raise ValueError, "Without a token three-legged-auth cannot be"\
+                                                              " carried out"
        
         url = '%s?%s' % (self.uri, query_string)
         oauth_request = oauth.OAuthRequest.from_consumer_and_token(
@@ -281,17 +284,19 @@ class YQLThreeLeggedAuth(YQL):
 
 if __name__ == "__main__":
 
-    # y = YQL()
-    # print "Making Public Query"
-    # query = 'select * from flickr.photos.search where text="panda" limit 3';
-    # print y.execute(query)
-   
+    y = YQL()
+    print "Making Public Query"
+    query = 'select * from flickr.photos.search where text="panda" limit 3'
+    print y.execute(query)
+    print  
+ 
     try:
         from yql.keys import SECRET, API_KEY
-        # print "Making Private Call"
-        # y2 = YQLTwoLeggedAuth(API_KEY, SECRET)
-        # query = "SELECT * from geo.places WHERE text='SFO'"
-        # print y2.execute(query)
+        print "Making Private Call"
+        y2 = YQLTwoLeggedAuth(API_KEY, SECRET)
+        query = "SELECT * from geo.places WHERE text='SFO'"
+        print y2.execute(query)
+        print
         
         print "Make private query requiring user auth"
         y3 = YQLThreeLeggedAuth(API_KEY, SECRET)

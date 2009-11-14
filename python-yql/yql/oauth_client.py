@@ -3,16 +3,16 @@
 Yahoo Specific client for handling two and three legged OAuth
 =============================================================
 
-Dependencies
-------------
-
-* python-oauth by leah Culver
-
 Author
 ------
 
 Stuart Colville
 http://muffinresearch.co.uk/
+
+Dependencies
+------------
+
+* python-oauth by leah Culver
 
 """
 
@@ -20,9 +20,11 @@ import httplib
 from oauth import oauth
 
 class YOAuthError(Exception):
+    """Simple Error Subclass"""
     pass
 
 class YOAuthClient(oauth.OAuthClient):
+    """Subclass of OAuthClient"""
         
     request_token_url = 'https://api.login.yahoo.com/oauth/v2/get_request_token'
     access_token_url = 'https://api.login.yahoo.com/oauth/v2/get_token'
@@ -32,7 +34,6 @@ class YOAuthClient(oauth.OAuthClient):
         self.key = key
         self.secret = secret
         self.connection = httplib.HTTPSConnection('api.login.yahoo.com')
-
 
     def fetch_request_token(self, oauth_request):
         """Get a request token"""
@@ -48,7 +49,7 @@ class YOAuthClient(oauth.OAuthClient):
             raise YOAuthError, content
 
 
-    def fetch_access_token(self, oauth_request, verifier):
+    def fetch_access_token(self, oauth_request):
         """Get an access token"""
         
         headers = oauth_request.to_header('yahooapis.com')
@@ -61,4 +62,8 @@ class YOAuthClient(oauth.OAuthClient):
             return oauth.OAuthToken.from_string(content)
         except KeyError:
             raise YOAuthError, content
+
+    def access_resource(self):
+        """Stub function not required"""
+        pass
 
