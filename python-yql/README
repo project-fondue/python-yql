@@ -9,7 +9,7 @@ Installation
 
 ::
 
-    sudo easy_install python-yql
+    sudo easy_install yql
 
 Usage
 =====
@@ -30,3 +30,4 @@ Contributions
 =============
 
 Bug-fixes/Features/Patches always welcome - please add branches to the launchpad project.
+

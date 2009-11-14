@@ -1,8 +1,5 @@
-
 import os
 import sys
-
-from yql import __version__
 
 from ez_setup import use_setuptools
 use_setuptools()
@@ -13,7 +10,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README')).read()
 
 setup(name='yql',
-    version=__version__,
+    version=0.1,
     description='Python YQL - client library for YQL (Yahoo Query Language)',
     long_description=README,
     classifiers=[
@@ -31,6 +28,7 @@ setup(name='yql',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
+    install_requires=['httplib2', 'oauth'],
     tests_require = ['nosetests'],
     test_suite="yql.tests",
     entry_points = """\
