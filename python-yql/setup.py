@@ -7,18 +7,20 @@ use_setuptools()
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
+
 README = open(os.path.join(here, 'README')).read()
+VERSION = 0.1
 
 setup(name='yql',
-    version=0.1,
+    version=VERSION,
     description='Python YQL - client library for YQL (Yahoo Query Language)',
     long_description=README,
     classifiers=[
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "Programming Language :: Python",
-    "Topic :: Internet :: WWW/HTTP",
-    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "Programming Language :: Python",
+        "Topic :: Internet :: WWW/HTTP",
+        "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
     ],
     keywords='web YQL',
     author="Stuart Colville",

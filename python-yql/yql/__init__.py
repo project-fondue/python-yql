@@ -1,15 +1,18 @@
-"""python-yql
+"""
+Python YQL
+==========
 
 YQL client for Python
 
-Stuart Colville
-http://muffinresearch.co.uk/
+Author: Stuart Colville http://muffinresearch.co.uk/
 
-from yql import YQL
+.. sourcecode:: python
+    
+    from yql import YQL
 
->>> yql = YQL(API_KEY, SECRET)
->>> query = 'select * from flickr.photos.search where text="panda" limit 3';
->>> yql.execute(query)
+    >>> yql = YQL(API_KEY, SECRET)
+    >>> query = 'select * from flickr.photos.search where text="panda" limit 3';
+    >>> yql.execute(query)
 
 """
 
@@ -178,10 +181,10 @@ class YQLThreeLeggedAuth(YQL):
 
     For an implementation this will require calling the following methods in order
 
-    * get_auth_url_and_token (returns a token and the auth url)
-        -- get verifier through callback or from screen --
-    * get_access_token  (returns the access token)
-    * execute - makes the request to the protected resource.
+    * ``get_auth_url_and_token`` (returns a token and the auth url)
+    * get verifier through callback or from screen
+    * ``get_access_token``  (returns the access token)
+    * ``execute`` - makes the request to the protected resource.
 
     """
 
