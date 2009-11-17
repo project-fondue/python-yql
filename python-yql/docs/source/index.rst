@@ -3,20 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Python YQL's documentation!
-======================================
-
-Contents:
-
-.. toctree::
-    :maxdepth: 2
-    
-    usage
-    contribution
-    code
-
-Introduction
-============
+==========
+Python YQL 
+==========
 
 Python YQL is a client library for making queries with `Yahoo Query Language <http://developer.yahoo.com/yql/>`_.
 
@@ -41,6 +30,18 @@ The following example shows a simple query using the public endpoint.
     >>> y = YQL()
     >>> query = 'select * from flickr.photos.search where text=panda limit 3';
     >>> y.execute(query)
+
+Contents
+--------
+
+.. toctree::
+    :maxdepth: 3 
+    
+    usage
+    contribution
+    code
+    license
+    authors
 
 
 
