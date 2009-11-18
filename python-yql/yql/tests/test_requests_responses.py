@@ -74,7 +74,7 @@ class YQLTestRequest(YQL):
         query_params = self.get_query_params(query, name_params, *args, **kwargs) 
         query_string = urlencode(query_params)
     
-        return  self.make_request(query, query_string, query_params)
+        return  self.make_request(query_string, query_params)
 
 class YQLTestRequestTwoLegged(YQLTwoLeggedAuth):
     """Subclass of YQLTwoLegged to allow returning of the request data"""    
@@ -83,7 +83,7 @@ class YQLTestRequestTwoLegged(YQLTwoLeggedAuth):
         query_params = self.get_query_params(query, name_params, *args, **kwargs) 
         query_string = urlencode(query_params)
     
-        return  self.make_request(query, query_string, query_params)
+        return  self.make_request(query_string, query_params)
 
 class YQLTestRequestThreeLegged(YQLThreeLeggedAuth):
     """Subclass of YQLTwoLegged to allow returning of the request data"""    
@@ -92,7 +92,7 @@ class YQLTestRequestThreeLegged(YQLThreeLeggedAuth):
         query_params = self.get_query_params(query, name_params, *args, **kwargs) 
         query_string = urlencode(query_params)
     
-        return  self.make_request(query, query_string, query_params)
+        return  self.make_request(query_string, query_params)
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_urlencoding_for_public_yql():

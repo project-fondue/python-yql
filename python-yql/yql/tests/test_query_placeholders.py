@@ -43,3 +43,10 @@ def test_placeholder_regex_three():
     query = "SELECT * from foo where email=@foo and test=@bar'"
     placeholders = y.get_placeholder_keys(query)
     assert placeholders == ['foo', 'bar']
+
+def test_placeholder_regex_four():
+    y=YQL()
+    query = "SELECT * from foo where foo='bar' LIMIT @foo"
+    placeholders = y.get_placeholder_keys(query)
+    assert placeholders == ['foo']
+

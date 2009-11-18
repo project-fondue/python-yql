@@ -39,7 +39,7 @@ __version__ = '0.1'
 __all__ = ['YQL', 'YQLTwoLeggedAuth', 'YQLThreeLeggedAuth']
 
 
-QUERY_PLACEHOLDER = re.compile(r"= ?@(?P<param>[a-z].*?\b)", re.IGNORECASE)
+QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
 
 class YQL(object):
     """Class for making public YQL queries"""
