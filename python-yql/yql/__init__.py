@@ -17,8 +17,9 @@ Author: Stuart Colville http://muffinresearch.co.uk/
 """
 
 import os
-import sys
 import re
+import sys
+import time
 import urlparse, cgi
 
 try:
@@ -26,26 +27,41 @@ try:
 except ImportError:
     import simplejson as json
 
-
 from urllib import urlencode
 from httplib2 import Http
-from oauth import oauth
+import oauth2 as oauth
+
+try:
+    from urlparse import parse_qs, parse_qsl
+except ImportError:
+    from cgi import parse_qs, parse_qsl
+
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 from yql.oauth_client import YOAuthClient
+
+
 
 __author__ = 'Stuart Colville'
 __version__ = '0.1'
 __all__ = ['YQL', 'YQLTwoLeggedAuth', 'YQLThreeLeggedAuth']
 
-
 QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
 
-class YQL(object):
+REQUEST_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_request_token'
+ACCESS_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_token'
+AUTHORIZATION_URL = 'https://api.login.yahoo.com/oauth/v2/request_auth'
+
+PUBLIC_URI = "http://query.yahooapis.com/v1/public/yql"
+PRIVATE_URI = "http://query.yahooapis.com/v1/yql"
+
+
+class YQLError(Exception):
+    pass
+
+
+class Public(object):
     """Class for making public YQL queries"""
-
-    uri = "http://query.yahooapis.com/v1/public/yql"
-
 
     def __init__(self, api_key=None, shared_secret=None, httplib2_inst=None):
         """
@@ -62,40 +78,33 @@ class YQL(object):
         self.http = httplib2_inst or Http()
 
 
-    def execute(self, query, name_params=None, *args, **kwargs):
+    def execute(self, query, params=None, *args, **kwargs):
         """Execute YQL query"""    
     
-        query_params = self.get_query_params(
-                                        query, name_params, *args, **kwargs)
-        query_string = urlencode(query_params)
-        
-        resp, content = self.make_request(query_string, query_params)
+        params = self.get_query_params(query, params, *args, **kwargs)
+        query_string = urlencode(params)
+        url = '%s?%s' % (PUBLIC_URI, query_string)
+        resp, content = self.http.request(url, "POST", query_string)
         
         if resp.get('status') == '200':
             return json.loads(content)
 
-
-    def make_request(self, query_string, query_params):
-        """Run the YQL query"""
-
-        return self.http.request('%s?%s' % (self.uri, query_string), 
-                                                    "POST", query_string)
        
-    def get_query_params(self, query, name_params, **kwargs):
+    def get_query_params(self, query, params, **kwargs):
         """Get the query params and validate placeholders"""
 
         query_params = {}
         keys_from_query = self.get_placeholder_keys(query)
-        if keys_from_query and not name_params:
+        if keys_from_query and not params:
             raise ValueError, "If you are using placeholders a dictionary "\
                                                 "of substitutions is required"
-        elif not keys_from_query and name_params:
+        elif not keys_from_query and params:
             raise ValueError, "You supplied a dictionary of substitutions "\
                                 "but the query doesn't have any placeholders"
 
-        elif keys_from_query and name_params:
+        elif keys_from_query and params:
             try:
-                keys_from_params = name_params.keys()
+                keys_from_params = params.keys()
             except AttributeError:
                 raise ValueError, "Named parameters for substitution "\
                                                     "must be passed as a dict"
@@ -104,7 +113,7 @@ class YQL(object):
                 raise ValueError, "Parameter keys don't match the query "\
                                                                 "placeholders"
             else:
-                query_params.update(name_params)
+                query_params.update(params)
 
 
         query_params['q'] = query
@@ -132,37 +141,58 @@ class YQL(object):
 
 
 
-class YQLTwoLeggedAuth(YQL):
+class TwoLegged(Public):
     """Two legged Auth is simple request which is signed prior to sending"""
     
-    uri = "http://query.yahooapis.com/v1/yql"
-
     def __init__(self, api_key, shared_secret, httplib2_inst=None):
         """Override init to ensure required args"""
-        super(YQLTwoLeggedAuth, self).__init__(
-                                    api_key, shared_secret, httplib2_inst)
+        super(TwoLegged, self).__init__(api_key, shared_secret, httplib2_inst)
+        self.uri = PRIVATE_URI
+        self.hmac_sha1_signature = oauth.SignatureMethod_HMAC_SHA1()
+        self.plaintext_signature = oauth.SignatureMethod_PLAINTEXT()
 
-        self.hmac_sha1_signature = oauth.OAuthSignatureMethod_HMAC_SHA1()
-    
-    def two_legged_request(self, resource_url, parameters=None):
+    @staticmethod
+    def get_base_params():
+        """Set-up the basic parameters needed for a request"""
+ 
+        params = {}
+        params['oauth_version'] = "1.0"
+        params['oauth_nonce'] = oauth.generate_nonce()
+        params['oauth_timestamp'] = int(time.time())
+
+        return params 
+   
+  
+    def __two_legged_request(self, resource_url, parameters=None):
         """Sign a request for two-legged authentication"""
         
-        consumer = oauth.OAuthConsumer(self.api_key, self.secret)
-        request = oauth.OAuthRequest.from_consumer_and_token(consumer, 
-                               http_url=resource_url, parameters=parameters)
+        params = self.get_base_params()
+        if parameters:
+            params.update(parameters)
 
+        consumer = oauth.Consumer(self.api_key, self.secret)
+        request = oauth.Request(method="GET", url=resource_url, parameters=params)
         request.sign_request(self.hmac_sha1_signature, consumer, None)
+        
         return request
+    
 
-    def make_request(self, query_string, query_params):
-        """Sets up and makes the request"""
-        url = '%s?%s' % (self.uri, query_string)
-        request = self.two_legged_request(url, parameters=query_params)
-        return self.http.request("%s?%s" % (self.uri, 
-                                            request.to_postdata()), "GET")
+    def execute(self, query, params=None, *args, **kwargs):
+        """Execute YQL query"""    
+    
+        query_params = self.get_query_params(query, params, *args, **kwargs)
+        url = '%s?%s' % (self.uri, urlencode(query_params))
+        request = self.__two_legged_request(url, parameters=query_params)
+        
+        signed_url = "%s?%s" % (self.uri, request.to_postdata()) 
+        resp, content = self.http.request(signed_url, "GET")
 
+        if resp.get('status') == '200':
+            return json.loads(content)
+    
 
-class YQLThreeLeggedAuth(YQL):
+class ThreeLegged(TwoLegged):
+
     """
     Three-legged Auth is used when it involves private data such as a 
     user's contacts.
@@ -188,21 +218,15 @@ class YQLThreeLeggedAuth(YQL):
 
     """
 
-    uri = "http://query.yahooapis.com/v1/yql"
-
     def __init__(self, api_key, shared_secret, httplib2_inst=None):
-        """Override init to ensure required args"""
-        super(YQLThreeLeggedAuth, self).__init__(
+        """Override init to add consumer"""
+        super(ThreeLegged, self).__init__(
                                     api_key, shared_secret, httplib2_inst)
 
-        self.plaintext_signature = oauth.OAuthSignatureMethod_PLAINTEXT()
-        self.hmac_sha1_signature = oauth.OAuthSignatureMethod_HMAC_SHA1()
-        
-        self.client = YOAuthClient(self.api_key, self.secret)
-        self.consumer = oauth.OAuthConsumer(self.api_key, self.secret)
+        self.consumer = oauth.Consumer(self.api_key, self.secret)
 
 
-    def get_auth_url_and_token(self, callback_url=None):
+    def get_token_and_auth_url(self, callback_url=None):
         """First step is to get the token and then send the request that 
         provides the auth URL
 
@@ -210,76 +234,81 @@ class YQLThreeLeggedAuth(YQL):
 
         """
 
-        if not callback_url:
-            callback_url = 'oob'
-    
-        oauth_request = oauth.OAuthRequest.from_consumer_and_token(
-                                     self.consumer, callback=callback_url, 
-                                     http_url=self.client.request_token_url)
+        client = oauth.Client(self.consumer) 
+
+        params = {}
+        params['oauth_callback'] = callback_url or 'oob'
+
+        request = oauth.Request(parameters=params)
+        url = REQUEST_TOKEN_URL
+        resp, cont = client.request(url, "POST", request.to_postdata()) 
         
-        oauth_request.sign_request(
-                              self.plaintext_signature, self.consumer, None)
-        token = self.client.fetch_request_token(oauth_request)
-        
-        # Authorize token to get Auth URL
-        oauth_request = oauth.OAuthRequest.from_token_and_callback(
-                                     token=token, 
-                                     http_url=self.client.authorization_url)
-        
-        return token, oauth_request.to_url()
+        if resp.get('status') == '200':
+            token = oauth.Token.from_string(cont)
+            data = dict(parse_qsl(cont))
+            return token, data['xoauth_request_auth_url'] 
     
 
-    def get_access_token(self, request_token, verifier):
+    def get_access_token(self, token, verifier):
 
         """Helper function for getting access token
 
-        If callback is 'oob' this will be provided following login
+        The verifier (required) should have been provided to the 
+        user following login to at the url returned 
+        by the ``get_token_and_auth_url`` method.
         
         If not you will need need to extract the auth_verifier 
         parameter from your callback url on the site where you 
-        are implementing 3-legged auth
+        are implementing 3-legged auth in order to pass it to this
+        function.
 
-        The token can be stored and re-used for subsequent calls.
+        The access token can be stored and re-used for subsequent 
+        calls.
 
         """
-        # If you pass verifier into the from_consumer_and_token 
-        # the resulting oauth_request has a token but no verifier 
-        # Setting verifier as an attr of token fixes that. But seems 
-        # a bit weird imho
-        setattr(request_token, 'verifier', verifier)
 
-        # get access token
-        oauth_request = oauth.OAuthRequest.from_consumer_and_token(
-                      self.consumer, token=request_token,
-                      http_url=self.client.access_token_url)
+        client = oauth.Client(self.consumer) 
 
-        oauth_request.sign_request(self.plaintext_signature,
-                                               self.consumer, request_token)
-        token = self.client.fetch_access_token(oauth_request)
-        return token
+        params = {}
+        params['oauth_verifier'] = verifier
+
+        oauth_request = oauth.Request.from_consumer_and_token(
+                self.consumer, http_url=ACCESS_TOKEN_URL, parameters=params)
+        oauth_request.sign_request(
+                self.plaintext_signature, self.consumer, token)
+
+        url = oauth_request.to_url()
+        postdata = oauth_request.to_postdata()
+        resp, cont = self.http.request(url, "POST", postdata) 
+
+        if resp.get('status') == '200':
+            access_token = oauth.Token.from_string(cont)
+
+        return access_token
  
             
-    def execute(self, query, name_params=None, token=None, *args, **kwargs):
+    def execute(self, query, params=None, token=None, *args, **kwargs):
         """Execute YQL Note in this case the token is required"""    
     
-        query_params = self.get_query_params(
-                                        query, name_params, *args, **kwargs)
+        query_params = self.get_query_params(query, params, *args, **kwargs)
         query_string = urlencode(query_params)
 
         if not token:
             raise ValueError, "Without a token three-legged-auth cannot be"\
                                                               " carried out"
-       
+         
         url = '%s?%s' % (self.uri, query_string)
-        oauth_request = oauth.OAuthRequest.from_consumer_and_token(
-                                  self.consumer, token=token, 
-                                  http_url=url, parameters=query_params)
-        # Sign request 
-        oauth_request.sign_request(self.hmac_sha1_signature, 
-                                                       self.consumer, token)
 
-        resp, content = self.http.request("%s?%s" % (self.uri, 
-                                            oauth_request.to_postdata()), "GET")
+        oauth_request = oauth.Request.from_consumer_and_token(
+                                        self.consumer, http_url=url, 
+                                        token=token, parameters=query_params)
+
+        # Sign request 
+        oauth_request.sign_request(
+                            self.hmac_sha1_signature, self.consumer, token)
+
+        uri = "%s?%s" % (self.uri,  oauth_request.to_postdata())
+        resp, content = self.http.request(uri, "GET")
 
         if resp.get('status') == '200':
             return json.loads(content)
@@ -287,30 +316,30 @@ class YQLThreeLeggedAuth(YQL):
 
 if __name__ == "__main__":
 
-    y = YQL()
+    y = Public()
     print "Making Public Query"
     query = 'select * from flickr.photos.search where text="panda" limit 3'
     print y.execute(query)
     print  
  
     try:
-        from yql.keys import SECRET, API_KEY
+        from yql.keys import SECRET, API_KEY, TOKEN
         print "Making Private Call"
-        y2 = YQLTwoLeggedAuth(API_KEY, SECRET)
+        y2 = TwoLegged(API_KEY, SECRET)
         query = "SELECT * from geo.places WHERE text='SFO'"
         print y2.execute(query)
-        print
-        
+        print    
         print "Make private query requiring user auth"
-        y3 = YQLThreeLeggedAuth(API_KEY, SECRET)
+        y3 = ThreeLegged(API_KEY, SECRET)
         query = 'select * from social.connections where owner_guid=me'
-        request_token, auth_url = y3.get_auth_url_and_token()
+        #request_token, auth_url = y3.get_token_and_auth_url()
 
-        print "Visit url %s and get a verifier string" % auth_url
-        verifier = raw_input("Enter the code: ")
-
-        access_token = y3.get_access_token(request_token, verifier)
-        print y3.execute(query, token=access_token) 
+        #print "Visit url %s and get a verifier string" % auth_url
+        #verifier = raw_input("Enter the code: ")
+        
+        #access_token = y3.get_access_token(request_token, verifier)
+        token = oauth.Token.from_string(TOKEN)
+        print y3.execute(query, token=token) 
 
     except ImportError:
         print "You need a file containing your Secret and API key"
