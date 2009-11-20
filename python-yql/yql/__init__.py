@@ -36,15 +36,11 @@ try:
 except ImportError:
     from cgi import parse_qs, parse_qsl
 
-
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-from yql.oauth_client import YOAuthClient
-
-
 
 __author__ = 'Stuart Colville'
-__version__ = '0.1'
-__all__ = ['YQL', 'YQLTwoLeggedAuth', 'YQLThreeLeggedAuth']
+__version__ = '0.2'
+__all__ = ['Public', 'TwoLegged', 'ThreeLegged']
 
 QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
 
@@ -76,20 +72,20 @@ class Public(object):
         self.api_key = api_key
         self.secret = shared_secret
         self.http = httplib2_inst or Http()
-
+        self.uri = PUBLIC_URI
 
     def execute(self, query, params=None, *args, **kwargs):
         """Execute YQL query"""    
     
         params = self.get_query_params(query, params, *args, **kwargs)
         query_string = urlencode(params)
-        url = '%s?%s' % (PUBLIC_URI, query_string)
+        url = '%s?%s' % (self.uri, query_string)
+
         resp, content = self.http.request(url, "POST", query_string)
-        
         if resp.get('status') == '200':
             return json.loads(content)
+      
 
-       
     def get_query_params(self, query, params, **kwargs):
         """Get the query params and validate placeholders"""
 
@@ -107,7 +103,7 @@ class Public(object):
                 keys_from_params = params.keys()
             except AttributeError:
                 raise ValueError, "Named parameters for substitution "\
-                                                    "must be passed as a dict"
+                                                       "must be passed as a dict"
 
             if set(keys_from_query) != set(keys_from_params):
                 raise ValueError, "Parameter keys don't match the query "\
@@ -138,7 +134,6 @@ class Public(object):
             result.append(match.group('param'))
 
         return result
-
 
 
 class TwoLegged(Public):
