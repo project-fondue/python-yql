@@ -108,7 +108,7 @@ class Public(object):
         if env:
             query_params['env'] = env
 
-        return query_params     
+        return query_params
 
 
     @staticmethod
@@ -138,7 +138,9 @@ class Public(object):
         resp, content = self.http.request(url, "GET")
         if resp.get('status') == '200':
             return json.loads(content)
- 
+        elif resp.get('status') == '401':
+            raise YQLError, (resp, content)
+
 
 class TwoLegged(Public):
     """Two legged Auth is simple request which is signed prior to sending"""
@@ -184,16 +186,6 @@ class TwoLegged(Public):
         
         return "%s?%s" % (self.uri, request.to_postdata()) 
 
-
-    def execute(self, query, params=None, **kwargs):
-        """Execute YQL query"""    
-            
-        signed_url = self.get_uri(query, params, **kwargs)
-        resp, content = self.http.request(signed_url, "GET")
-
-        if resp.get('status') == '200':
-            return json.loads(content)
-    
 
 class ThreeLegged(TwoLegged):
 
@@ -252,13 +244,15 @@ class ThreeLegged(TwoLegged):
 
         request = oauth.Request(parameters=params)
         url = REQUEST_TOKEN_URL
-        resp, cont = client.request(url, "POST", request.to_postdata()) 
+        resp, content = client.request(url, "POST", request.to_postdata()) 
         
         if resp.get('status') == '200':
-            token = oauth.Token.from_string(cont)
-            data = dict(parse_qsl(cont))
+            token = oauth.Token.from_string(content)
+            data = dict(parse_qsl(content))
             return token, data['xoauth_request_auth_url'] 
-    
+        elif resp.get('status') == '401':
+            raise YQLError, (resp, content)
+
 
     def get_access_token(self, token, verifier):
 
@@ -295,20 +289,29 @@ class ThreeLegged(TwoLegged):
 
         url = oauth_request.to_url()
         postdata = oauth_request.to_postdata()
-        resp, cont = self.http.request(url, "POST", postdata) 
+        resp, content = self.http.request(url, "POST", postdata) 
 
         if resp.get('status') == '200':
-            access_token = oauth.Token.from_string(cont)
+            access_token = YahooToken.from_string(content)
+            access_token.timestamp = oauth_request['oauth_timestamp']
+        elif resp.get('status') == '401':
+            raise YQLError, (resp, content)
 
         return access_token
 
     
-    @staticmethod
-    def token_has_expired(token):
+    def check_token(self, token):
         """Check to see if a token has expired"""
+        
+        if not hasattr(token, 'timestamp'):
+            raise AttributeError, 'token doesn\'t have a timestamp attrbute'
 
-        pass
+        if (int(token.timestamp) + 3600) < time.time():
+            token = self.refresh_token(token)
+        else:
+            return token
 
+    
     def refresh_token(self, token):
         """Access Tokens only last for one hour from the point of being issued. 
 
@@ -335,10 +338,13 @@ class ThreeLegged(TwoLegged):
 
         url = oauth_request.to_url()
         postdata = oauth_request.to_postdata()
-        resp, cont = self.http.request(url, "POST", postdata) 
+        resp, content = self.http.request(url, "POST", postdata) 
         
         if resp.get('status') == '200':
-            access_token = YahooToken.from_string(cont)
+            access_token = YahooToken.from_string(content)
+            access_token.timestamp = oauth_request['oauth_timestamp']
+        elif resp.get('status') == '401':
+            raise YQLError, (resp, content)
 
         return access_token
 
@@ -367,12 +373,14 @@ class ThreeLegged(TwoLegged):
             
     def execute(self, query, params=None, token=None, **kwargs):
         """Execute YQL Note in this case the token is required"""    
-        
+       
         uri = self.get_uri(query, params, token,  **kwargs)
         resp, content = self.http.request(uri, "GET")
 
         if resp.get('status') == '200':
             return json.loads(content)
+        elif resp.get('status') == '401':
+            raise YQLError, (resp, content)
 
 
 class YahooToken(oauth.Token):
@@ -407,10 +415,14 @@ class YahooToken(oauth.Token):
  
         token = YahooToken(key, secret)
 
-        session_handle = dict(parse_qsl(s)).get('oauth_session_handle')
+        session_handle = params.get('oauth_session_handle')
         if session_handle:
-            setattr(token, 'session_handle', session_handle)
-        
+            setattr(token, 'session_handle', session_handle[0])
+ 
+        timestamp = params.get('token_creation_timestamp')
+        if timestamp:
+            setattr(token, 'timestamp', timestamp[0])
+
         try:
             token.callback_confirmed = params['oauth_callback_confirmed'][0]
         except KeyError:
@@ -433,10 +445,13 @@ class YahooToken(oauth.Token):
 
         if hasattr(self, 'session_handle'):
             data['oauth_session_handle'] = self.session_handle
+
+        if hasattr(self, 'timestamp'):
+            data['token_creation_timestamp'] = self.timestamp
  
         if self.callback_confirmed is not None:
             data['oauth_callback_confirmed'] = self.callback_confirmed
-        return urlencode(data)    
-
+        
+        return urlencode(data)
 
 
