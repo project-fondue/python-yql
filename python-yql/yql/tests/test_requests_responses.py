@@ -71,60 +71,32 @@ def set_up_http_request_data():
 def tear_down_http_request_data():
     httplib2.Http = old_httplib2
 
+def surrogate_execute(self, query, params=None, **kwargs):
+    """A surrogate execute method that returns the uri"""
+    return self.get_uri(query, params, **kwargs)
+
 class TestPublic(yql.Public):
     """Subclass of YQL to allow returning of the request data"""    
-
-    def execute(self, query, name_params=None, *args, **kwargs):
-        query_params = self.get_query_params(query, name_params, *args, **kwargs) 
-        query_string = urlencode(query_params)
-    
-        uri =  "%s?%s" % (self.uri, query_string)
-        return uri, query_params
+    pass
 
 class TestTwoLegged(yql.TwoLegged):
     """Subclass of YQLTwoLegged to allow returning of the request data"""    
-
-    def execute(self, query, params=None, *args, **kwargs):
-        query_params = self.get_query_params(query, params, *args, **kwargs)
-        url = '%s?%s' % (self.uri, urlencode(query_params))
-        request = self._TwoLegged__two_legged_request(url, parameters=query_params)
-        
-        signed_url = "%s?%s" % (self.uri, request.to_postdata()) 
-        return signed_url 
+    pass
 
 class TestThreeLegged(yql.ThreeLegged):
     """Subclass of YQLTwoLegged to allow returning of the request data"""    
+    pass
 
-    def execute(self, query, token=None, params=None, *args, **kwargs):
-
-        query_params = self.get_query_params(query, params, *args, **kwargs)
-        query_string = urlencode(query_params)
-
-        if not token:
-            raise ValueError, "Without a token three-legged-auth cannot be"\
-                                                              " carried out"
-         
-        url = '%s?%s' % (self.uri, query_string)
-
-        oauth_request = oauth.Request.from_consumer_and_token(
-                                        self.consumer, http_url=url, 
-                                        token=token, parameters=query_params)
-
-        # Sign request 
-        oauth_request.sign_request(
-                            self.hmac_sha1_signature, self.consumer, token)
-
-        uri = "%s?%s" % (self.uri,  oauth_request.to_postdata())
-
-        return uri
-
+setattr(TestPublic, 'execute', surrogate_execute)
+setattr(TestTwoLegged, 'execute', surrogate_execute)
+setattr(TestThreeLegged, 'execute', surrogate_execute)
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_urlencoding_for_public_yql():
     query = 'SELECT * from foo'
     from httplib2 import Http
     y = TestPublic(httplib2_inst=Http())
-    uri, query_params = y.execute(query)
+    uri = y.execute(query)
     assert uri == "http://query.yahooapis.com/v1/public/yql?q=SELECT+%2A+from+foo&format=json"
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
@@ -132,7 +104,7 @@ def test_env_for_public_yql():
     query = 'SELECT * from foo'
     from httplib2 import Http
     y = TestPublic(httplib2_inst=Http())
-    uri, query_params = y.execute(query, env="http://foo.com")
+    uri = y.execute(query, env="http://foo.com")
     assert uri.find(urlencode({"env":"http://foo.com"})) > -1
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
@@ -140,7 +112,7 @@ def test_name_param_inserted_for_public_yql():
     query = 'SELECT * from foo WHERE dog=@dog'
     from httplib2 import Http
     y = TestPublic(httplib2_inst=Http())
-    uri, query_params = y.execute(query, {"dog": "fifi"})
+    uri = y.execute(query, {"dog": "fifi"})
     assert uri.find('dog=fifi') > -1
 
 @raises(TypeError)
@@ -235,7 +207,10 @@ def test_request_for_three_legged():
     from httplib2 import Http
     y = TestThreeLegged('test-api-key', 'test-secret', httplib2_inst=Http())
     token = oauth.Token.from_string('oauth_token=foo&oauth_token_secret=bar')
-    signed_url = y.execute(query, token)
+    signed_url = y.execute(query, token=token)
     qs  = dict(parse_qsl(signed_url.split('?')[1]))
     assert qs['q'] == query
     assert qs['format'] == 'json'
+
+
+    
