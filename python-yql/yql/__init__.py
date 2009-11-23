@@ -138,7 +138,7 @@ class Public(object):
         resp, content = self.http.request(url, "GET")
         if resp.get('status') == '200':
             return json.loads(content)
-        elif resp.get('status') == '401':
+        else:
             raise YQLError, (resp, content)
 
 
@@ -250,7 +250,7 @@ class ThreeLegged(TwoLegged):
             token = oauth.Token.from_string(content)
             data = dict(parse_qsl(content))
             return token, data['xoauth_request_auth_url'] 
-        elif resp.get('status') == '401':
+        else:
             raise YQLError, (resp, content)
 
 
@@ -294,10 +294,10 @@ class ThreeLegged(TwoLegged):
         if resp.get('status') == '200':
             access_token = YahooToken.from_string(content)
             access_token.timestamp = oauth_request['oauth_timestamp']
-        elif resp.get('status') == '401':
+            return access_token
+        else:
             raise YQLError, (resp, content)
 
-        return access_token
 
     
     def check_token(self, token):
@@ -308,8 +308,8 @@ class ThreeLegged(TwoLegged):
 
         if (int(token.timestamp) + 3600) < time.time():
             token = self.refresh_token(token)
-        else:
-            return token
+            
+        return token
 
     
     def refresh_token(self, token):
@@ -343,10 +343,10 @@ class ThreeLegged(TwoLegged):
         if resp.get('status') == '200':
             access_token = YahooToken.from_string(content)
             access_token.timestamp = oauth_request['oauth_timestamp']
-        elif resp.get('status') == '401':
+            return access_token
+        else:
             raise YQLError, (resp, content)
 
-        return access_token
 
 
     def get_uri(self, query, params=None, token=None, **kwargs):
@@ -379,7 +379,7 @@ class ThreeLegged(TwoLegged):
 
         if resp.get('status') == '200':
             return json.loads(content)
-        elif resp.get('status') == '401':
+        else:
             raise YQLError, (resp, content)
 
 

@@ -51,11 +51,12 @@ class FileTokenStore(BaseTokenStore):
 
         if hasattr(token, 'key'):
             token = YahooToken.to_string(token)        
-       
-        filepath = self.get_filepath(name)
-        f_handle = open(filepath, 'w')
-        f_handle.write(token)
-        f_handle.close()
+      
+        if token: 
+            filepath = self.get_filepath(name)
+            f_handle = open(filepath, 'w')
+            f_handle.write(token)
+            f_handle.close()
 
 
     def get(self, name):
