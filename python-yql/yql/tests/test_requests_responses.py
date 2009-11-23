@@ -1,4 +1,3 @@
-
 import os
 import urlparse
 import httplib2
@@ -6,10 +5,15 @@ from urllib import urlencode
 from email import message_from_string, message_from_file
 from nose import with_setup
 from nose.tools import raises
-from yql import *
+import oauth2 as oauth
+import yql
 
+try:
+    from urlparse import parse_qs, parse_qsl
+except ImportError:
+    from cgi import parse_qs, parse_qsl
 
-HTTP_SRC_DIR = "http_src/"
+HTTP_SRC_DIR = os.path.join(os.path.dirname(__file__), "http_src/")
 
 class MyHttpReplacement:
     """Build a stand-in for httplib2.Http that takes its
@@ -67,62 +71,146 @@ def set_up_http_request_data():
 def tear_down_http_request_data():
     httplib2.Http = old_httplib2
 
-class YQLTestRequest(YQL):
+def surrogate_execute(self, query, params=None, **kwargs):
+    """A surrogate execute method that returns the uri"""
+    return self.get_uri(query, params, **kwargs)
+
+class TestPublic(yql.Public):
     """Subclass of YQL to allow returning of the request data"""    
+    pass
 
-    def execute(self, query, name_params=None, *args, **kwargs):
-        query_params = self.get_query_params(query, name_params, *args, **kwargs) 
-        query_string = urlencode(query_params)
-    
-        return  self.make_request(query_string, query_params)
-
-class YQLTestRequestTwoLegged(YQLTwoLeggedAuth):
+class TestTwoLegged(yql.TwoLegged):
     """Subclass of YQLTwoLegged to allow returning of the request data"""    
+    pass
 
-    def execute(self, query, name_params=None, *args, **kwargs):
-        query_params = self.get_query_params(query, name_params, *args, **kwargs) 
-        query_string = urlencode(query_params)
-    
-        return  self.make_request(query_string, query_params)
-
-class YQLTestRequestThreeLegged(YQLThreeLeggedAuth):
+class TestThreeLegged(yql.ThreeLegged):
     """Subclass of YQLTwoLegged to allow returning of the request data"""    
+    pass
 
-    def execute(self, query, name_params=None, *args, **kwargs):
-        query_params = self.get_query_params(query, name_params, *args, **kwargs) 
-        query_string = urlencode(query_params)
-    
-        return  self.make_request(query_string, query_params)
+setattr(TestPublic, 'execute', surrogate_execute)
+setattr(TestTwoLegged, 'execute', surrogate_execute)
+setattr(TestThreeLegged, 'execute', surrogate_execute)
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_urlencoding_for_public_yql():
     query = 'SELECT * from foo'
     from httplib2 import Http
-    y = YQLTestRequest(httplib2_inst=Http())
-    uri, args, kwargs = y.execute(query)
+    y = TestPublic(httplib2_inst=Http())
+    uri = y.execute(query)
     assert uri == "http://query.yahooapis.com/v1/public/yql?q=SELECT+%2A+from+foo&format=json"
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_env_for_public_yql():
     query = 'SELECT * from foo'
     from httplib2 import Http
-    y = YQLTestRequest(httplib2_inst=Http())
-    uri, args, kwargs = y.execute(query, env="http://foo.com")
+    y = TestPublic(httplib2_inst=Http())
+    uri = y.execute(query, env="http://foo.com")
     assert uri.find(urlencode({"env":"http://foo.com"})) > -1
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_name_param_inserted_for_public_yql():
     query = 'SELECT * from foo WHERE dog=@dog'
     from httplib2 import Http
-    y = YQLTestRequest(httplib2_inst=Http())
-    uri, args, kwargs = y.execute(query, {"dog": "fifi"})
+    y = TestPublic(httplib2_inst=Http())
+    uri = y.execute(query, {"dog": "fifi"})
     assert uri.find('dog=fifi') > -1
 
 @raises(TypeError)
 def test_yql_with_2leg_auth_raises_typerror():
-    y = YQLTestRequestTwoLegged()
+    y = TestTwoLegged()
 
 @raises(TypeError)
 def test_yql_with_3leg_auth_raises_typerror():
-    y = YQLTestRequestThreeLegged()
+    y = TestThreeLegged()
 
+@with_setup(set_up_http_from_file, tear_down_http_from_file)
+def test_json_response_from_file():
+    query = 'SELECT * from foo WHERE dog=@dog'
+    from httplib2 import Http
+    y = yql.Public(httplib2_inst=Http())
+    content = y.execute(query, {"dog": "fifi"})
+    assert content is not None
+
+def test_api_key_and_secret_attrs():
+    from httplib2 import Http
+    y = yql.TwoLegged('test-api-key', 'test-secret')
+    assert y.api_key == 'test-api-key'
+    assert y.secret == 'test-secret'
+
+def test_api_key_and_secret_attrs2():
+    from httplib2 import Http
+    y = yql.ThreeLegged('test-api-key', 'test-secret')
+    assert y.api_key == 'test-api-key'
+    assert y.secret == 'test-secret'   
+
+def test_get_base_params():
+    from httplib2 import Http
+    y = yql.ThreeLegged('test-api-key', 'test-secret')
+    result = y.get_base_params()
+    assert set(['oauth_nonce', 'oauth_version', 'oauth_timestamp']) \
+                                                    == set(result.keys())
+
+def test_get_two_legged_request_keys():
+    from httplib2 import Http
+    y = yql.TwoLegged('test-api-key', 'test-secret')
+    # Accessed this was because it's private
+    request =  y._TwoLegged__two_legged_request('http://google.com')
+    assert set(['oauth_nonce', 'oauth_version', 'oauth_timestamp', 
+        'oauth_consumer_key', 'oauth_signature_method',
+        'oauth_version', 'oauth_signature']) == set(request.keys())
+
+def test_get_two_legged_request_values():
+    from httplib2 import Http
+    y = yql.TwoLegged('test-api-key', 'test-secret')
+    # Accessed this was because it's private
+    request =  y._TwoLegged__two_legged_request('http://google.com')
+    assert request['oauth_consumer_key'] == 'test-api-key'
+    assert request['oauth_signature_method'] == 'HMAC-SHA1'
+    assert request['oauth_version'] == '1.0'
+
+def test_get_two_legged_request_param():
+    from httplib2 import Http
+    y = yql.TwoLegged('test-api-key', 'test-secret')
+    # Accessed this way because it's private
+    request =  y._TwoLegged__two_legged_request('http://google.com', 
+                                                        {"test-param": "test"})
+    assert request.get('test-param') == 'test'
+
+@with_setup(set_up_http_from_file, tear_down_http_from_file)
+def test_get_two_legged_from_file():
+    query = 'SELECT * from foo'
+    from httplib2 import Http
+    y = yql.TwoLegged('test-api-key', 'test-secret', httplib2_inst=Http())
+    # Accessed this was because it's private
+    assert y.execute(query) is not None
+
+@with_setup(set_up_http_request_data, tear_down_http_request_data)
+def test_request_for_two_legged():
+    query = 'SELECT * from foo'
+    from httplib2 import Http
+    y = TestTwoLegged('test-api-key', 'test-secret', httplib2_inst=Http())
+    signed_url = y.execute(query)
+    qs  = dict(parse_qsl(signed_url.split('?')[1]))
+    assert qs['q'] == query
+    assert qs['format'] == 'json'
+
+@raises(ValueError)
+def test_raises_for_three_legged_with_no_token():
+    query = 'SELECT * from foo'
+    from httplib2 import Http
+    y = TestThreeLegged('test-api-key', 'test-secret', httplib2_inst=Http())
+    request = y.execute(query)
+
+@with_setup(set_up_http_request_data, tear_down_http_request_data)
+def test_request_for_three_legged():
+    query = 'SELECT * from foo'
+    from httplib2 import Http
+    y = TestThreeLegged('test-api-key', 'test-secret', httplib2_inst=Http())
+    token = oauth.Token.from_string('oauth_token=foo&oauth_token_secret=bar')
+    signed_url = y.execute(query, token=token)
+    qs  = dict(parse_qsl(signed_url.split('?')[1]))
+    assert qs['q'] == query
+    assert qs['format'] == 'json'
+
+
+    
