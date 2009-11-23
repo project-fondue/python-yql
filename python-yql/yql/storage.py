@@ -25,7 +25,12 @@ class BaseTokenStore(object):
 
 
 class FileTokenStore(BaseTokenStore):
-    """A simple filesystem based token store"""
+    """A simple filesystem based token store
+    
+    Note: this is more intended as an example rather than 
+    something for heavy duty production usage.
+
+    """
 
     def __init__(self, dir_path, secret=None):
         """Initialize token storage"""
