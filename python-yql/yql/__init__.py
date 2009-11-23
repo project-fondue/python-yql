@@ -8,11 +8,11 @@ Author: Stuart Colville http://muffinresearch.co.uk/
 
 .. sourcecode:: python
     
-    from yql import YQL
+    import yql
 
-    >>> yql = YQL(API_KEY, SECRET)
+    >>> y = yql.Public()
     >>> query = 'select * from flickr.photos.search where text="panda" limit 3';
-    >>> yql.execute(query)
+    >>> y.execute(query)
 
 """
 
