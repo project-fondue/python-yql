@@ -28,7 +28,7 @@ The following example shows a simple query using the public endpoint.
 
     >>> import yql
     >>> y = yql.Public()
-    >>> query = 'select * from flickr.photos.search where text=panda limit 3';
+    >>> query = 'select * from flickr.photos.search where text="panda" limit 3';
     >>> y.execute(query)
 
 Contents
@@ -36,7 +36,8 @@ Contents
 
 .. toctree::
     :maxdepth: 3 
-    
+
+    installation
     usage
     contribution
     code
