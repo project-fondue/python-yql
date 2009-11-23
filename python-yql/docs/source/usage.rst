@@ -11,8 +11,8 @@ The following example shows a simple query using the public endpoint.
 
 .. sourcecode:: python
 
-    >>> from yql import YQL
-    >>> y = YQL()
+    >>> from yql import Public
+    >>> y = Public()
     >>> query = 'select * from flickr.photos.search where text=panda limit 3';
     >>> y.execute(query)
 
@@ -29,8 +29,8 @@ This example uses the optional query placeholders which are strings prefixed wit
 
 .. sourcecode:: python
 
-    >>> from yql import YQL
-    >>> y = YQL()
+    >>> from yql import Public
+    >>> y = Public()
     >>> query = 'select * from flickr.photos.search where text=@text limit 3';
     >>> y.execute(query, {"text": "panda"})
 
@@ -46,15 +46,15 @@ Oauth supports two and three-legged Oauth. Two-legged is used to sign requests a
 Two-legged Auth
 ---------------
 
-Here's a quick example of using Two-legged authentication in Python YQL.
+Here's an example of using Two-legged authentication in Python YQL.
 
 
 .. sourcecode:: python
 
-    from yql import YQLTwoLeggedAuth
+    from yql import TwoLegged
 
-    y = YQLTwoLeggedAuth(API_KEY, SHARED_SECRET)
-    y.execute("select * from flickr.photos.search where text=panda limit 3")
+    y = TwoLegged(API_KEY, SHARED_SECRET)
+    y.execute("select * from flickr.photos.search where text='panda' limit 3")
 
 
 Three-legged Auth
@@ -67,9 +67,9 @@ Here's an example:
 
 .. sourcecode:: python
 
-    from yql import YQLThreeLeggedAuth
+    from yql import ThreeLegged
 
-    y3 = YQLThreeLeggedAuth(API_KEY, SECRET)
+    y3 = ThreeLegged(API_KEY, SECRET)
     query = 'select * from social.connections where owner_guid=me'
     
     request_token, auth_url = y3.get_auth_url_and_token()
@@ -90,11 +90,47 @@ The next call, ``get_access_token`` requires the request token and verifier to b
 
 Once you have got the ``access_token`` it should be used to execute the query.
 
-At this point stashing the ``access_token`` away for repeated requests is down to the implementation but it's likely that this would be a natural extension to this library in the future.
+The Token can be re-used for subsequent requests but after an hour it will expire and will need to be refreshed.
+
+The ``refresh_token()`` method can be used to request a new token using the expired token.
+
+Using Storage Classes
+=====================
+
+``yql.storage`` provides a basic way to store Tokens on the filesystem to make it easier to re-use access_tokens in YQL queries.
+
+Here's an example:
+
+.. sourcecode:: python
+
+    y3 = ThreeLegged(API_KEY, SECRET)
+
+    token_cache_name = "foo"
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'cache'))
+    token_store = FileTokenStore(path, secret='gfdlgkfruwopiruowsd')
+
+    query = 'select * from social.connections where owner_guid=me'
+    stored_token = token_store.get('foo')
+
+    if not stored_token:
+        # Do the dance
+        request_token, auth_url = y3.get_token_and_auth_url()
+        print "Visit url %s and get a verifier string" % auth_url
+        verifier = raw_input("Enter the code: ")
+        token = y3.get_access_token(request_token, verifier)
+        token_store.set('foo', token)
+    else:
+        # Check access_token is within 1hour-old and if not refresh it
+        # and stash it
+        token = y3.check_token(stored_token)
+        if token != stored_token:
+            token_store.set('foo', token)
+    
+    print y3.execute(query, token=token) 
 
 
+This example shows a way to do the initial dance including authentication. The access token provided is then stashed away in a file for re-use on subsequent calls. When re-used the ``check_token()`` method is used to check if the token needs refreshing. If it's over an hour old the token is refreshed and returned.
 
-
-
+The Storage classes are designed to be extended as necessary so that the user can implement a different backend for storing tokens for re-use. An example would be to use memcache for storage. To create a new storage class all that's needed is to subclass yql.storage.BaseTokenStorage.
 
 

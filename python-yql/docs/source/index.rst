@@ -26,8 +26,8 @@ The following example shows a simple query using the public endpoint.
 
 .. sourcecode:: python
 
-    >>> from yql import YQL
-    >>> y = YQL()
+    >>> from yql import Public
+    >>> y = Public()
     >>> query = 'select * from flickr.photos.search where text=panda limit 3';
     >>> y.execute(query)
 
@@ -42,8 +42,6 @@ Contents
     code
     license
     authors
-
-
 
 Indices and tables
 ==================
