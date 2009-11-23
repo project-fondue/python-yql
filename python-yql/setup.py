@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 
 README = open(os.path.join(here, 'README')).read()
-VERSION = 0.1
+VERSION = 0.2
 
 setup(name='yql',
     version=VERSION,
@@ -30,7 +30,7 @@ setup(name='yql',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=['httplib2', 'oauth'],
+    install_requires = sys.version_info < (2,6) and ['httplib2', 'simplejson'] or ['httplib2'],
     tests_require = ['nosetests'],
     test_suite="yql.tests",
     entry_points = """\

@@ -16,14 +16,15 @@ Usage
 
 ::
 
-    >>> from yql import YQL
-    >>> y = YQL()
+    >>> import yql
+    >>> y = yql.Public()
     >>> query = 'select * from flickr.photos.search where text=@text limit 3';
     >>> y.execute(query, {"text": "panda"})
 
 
 Source-code
 ===========
+
 Branches exist at https://launchpad.net/python-yql
 
 Contributions
