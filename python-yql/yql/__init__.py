@@ -80,10 +80,12 @@ class Public(object):
 
         query_params = {}
         keys_from_query = self.get_placeholder_keys(query)
-        if keys_from_query and not params:
+
+        if keys_from_query and not params or (params and not hasattr(params, 'get')):
             raise ValueError, "If you are using placeholders a dictionary "\
                                                 "of substitutions is required"
-        elif not keys_from_query and params:
+
+        elif not keys_from_query and params and hasattr(params, 'get'):
             raise ValueError, "You supplied a dictionary of substitutions "\
                                 "but the query doesn't have any placeholders"
 
@@ -274,8 +276,6 @@ class ThreeLegged(TwoLegged):
         with ``refresh_token()``
 
         """
-
-        client = oauth.Client(self.consumer) 
 
         params = {}
         params['oauth_verifier'] = verifier

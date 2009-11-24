@@ -30,6 +30,8 @@ class MyHttpReplacement:
         path = urlparse.urlparse(uri)[2]
         fname = os.path.join(HTTP_SRC_DIR, path[1:])
 
+        print fname
+
         if not os.path.exists(fname):
             index = self.hit_counter.get(fname, 1)
 
@@ -52,6 +54,9 @@ class MyHttpReplacement:
 
 class RequestDataHttpReplacement:
     """Create an httplib stub that returns request data"""
+
+    def __init__(self):
+        pass
 
     def request(self, uri, *args, **kwargs):
         """return the request data"""
@@ -212,5 +217,36 @@ def test_request_for_three_legged():
     assert qs['q'] == query
     assert qs['format'] == 'json'
 
+@with_setup(set_up_http_from_file, tear_down_http_from_file)
+def test_three_legged_execution():
+    query = 'SELECT * from foo WHERE dog=@dog'
+    from httplib2 import Http
+    y = yql.ThreeLegged('test','test2', httplib2_inst=Http())
+    token = yql.YahooToken('test', 'test2')
+    content = y.execute(query, {"dog": "fifi"}, token=token)
+    assert content is not None
+  
+@raises(yql.YQLError)
+@with_setup(set_up_http_from_file, tear_down_http_from_file)
+def test_get_access_token_request():
+    from httplib2 import Http
+    y = yql.ThreeLegged('test','test2', httplib2_inst=Http())
+    new_token = yql.YahooToken('test', 'test2')
+    content = y.get_access_token(token=new_token, verifier='test-verfier')
 
-    
+@with_setup(set_up_http_from_file, tear_down_http_from_file)
+def test_get_access_token_request():
+    from httplib2 import Http
+    y = yql.ThreeLegged('test','test2', httplib2_inst=Http())
+    new_token = yql.YahooToken('test', 'test2')
+    content = y.get_access_token(token=new_token, verifier='test-verfier')
+    assert content is not None
+
+@with_setup(set_up_http_from_file, tear_down_http_from_file)
+def test_get_access_token_request():
+    from httplib2 import Http
+    y = yql.ThreeLegged('test','test2', httplib2_inst=Http())
+    new_token = yql.YahooToken('test', 'test2')
+    new_token.session_handle = 'sess_handle_test'
+    content = y.refresh_token(token=new_token)
+    assert content is not None
