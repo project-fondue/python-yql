@@ -14,22 +14,26 @@ Author: Stuart Colville http://muffinresearch.co.uk/
     >>> query = 'select * from flickr.photos.search where text="panda" limit 3';
     >>> y.execute(query)
 
-"""
+TODO: Wrap json.loads in try/except
+TODO: More granular error handling
 
+"""
 import os
 import re
 import sys
 import time
-import urlparse, cgi
+import pprint
 
 try:
     import json
 except ImportError:
     import simplejson as json
 
+from urlparse import urlparse
 from urllib import urlencode
 from httplib2 import Http
 import oauth2 as oauth
+
 
 try:
     from urlparse import parse_qs, parse_qsl
@@ -39,7 +43,7 @@ except ImportError:
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 
 __author__ = 'Stuart Colville'
-__version__ = '0.2'
+__version__ = '0.3'
 __all__ = ['Public', 'TwoLegged', 'ThreeLegged']
 
 QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
@@ -50,6 +54,68 @@ AUTHORIZATION_URL = 'https://api.login.yahoo.com/oauth/v2/request_auth'
 
 PUBLIC_URI = "http://query.yahooapis.com/v1/public/yql"
 PRIVATE_URI = "http://query.yahooapis.com/v1/yql"
+
+
+class YQL(object):
+    """A YQLObject is the object created as the result of a YQL query"""
+    
+    def __init__(self, result_dict):
+        """Init query object"""
+        self._raw = result_dict and result_dict.get('query') or {}
+
+    @property
+    def raw(self):
+        """The raw data response"""
+        return self._raw
+
+    @property
+    def uri(self):
+        """The uri used to query the YQL API"""
+        return self._raw.get('uri')
+
+    @property
+    def query_params(self):
+        """The query parameters of the uri used to call the YQL API"""
+        if self.uri:
+            q_string = urlparse(self.uri).query
+            return dict(parse_qsl(q_string))
+        else:
+            return {}
+
+    @property
+    def results(self):
+        """The query results dict"""
+        return self._raw.get('results')
+
+    @property
+    def query(self):
+        """The YQL query"""
+        return self.query_params.get('q')
+
+    @property
+    def lang(self):
+        """The language"""
+        return self._raw.get('lang')
+
+    @property
+    def count(self):
+        """The results count"""
+        count = self._raw.get('count')
+        if count:
+            return int(count)
+    
+    @property
+    def diagnostics(self):
+        """The query diagnostics"""
+        return self._raw.get('diagnostics')
+
+    def pprint_raw(self, indent=4):
+        """Pretty print the raw data"""
+        pprint.pprint(self._raw, indent=indent)
+
+    def pformat_raw(self, indent=4):
+        """Pretty format the raw data"""
+        return pprint.pformat(self._raw, indent=indent)
 
 
 class YQLError(Exception):
@@ -139,7 +205,7 @@ class Public(object):
         url = self.get_uri(query, params, **kwargs)
         resp, content = self.http.request(url, "GET")
         if resp.get('status') == '200':
-            return json.loads(content)
+            return YQL(json.loads(content))
         else:
             raise YQLError, (resp, content)
 
@@ -378,7 +444,7 @@ class ThreeLegged(TwoLegged):
         resp, content = self.http.request(uri, "GET")
 
         if resp.get('status') == '200':
-            return json.loads(content)
+            return YQL(json.loads(content))
         else:
             raise YQLError, (resp, content)
 
@@ -398,7 +464,7 @@ class YahooToken(oauth.Token):
         if not len(s):
             raise ValueError("Invalid parameter string.")
  
-        params = urlparse.parse_qs(s, keep_blank_values=False)
+        params = parse_qs(s, keep_blank_values=False)
         if not len(params):
             raise ValueError("Invalid parameter string.")
  

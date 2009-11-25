@@ -30,8 +30,6 @@ class MyHttpReplacement:
         path = urlparse.urlparse(uri)[2]
         fname = os.path.join(HTTP_SRC_DIR, path[1:])
 
-        print fname
-
         if not os.path.exists(fname):
             index = self.hit_counter.get(fname, 1)
 
