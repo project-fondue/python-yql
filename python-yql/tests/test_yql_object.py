@@ -42,3 +42,11 @@ def test_yqlobj_raw():
 
 def test_query_is_none():
     assert yqlobj2.query is None
+
+def test_rows():
+    stuff = []
+    for row in yqlobj.rows:
+        stuff.append(row.get('server'))
+
+    assert stuff == [u'2510', u'2754', u'2586']
+

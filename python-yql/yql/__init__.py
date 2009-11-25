@@ -88,6 +88,21 @@ class YQL(object):
         return self._raw.get('results')
 
     @property
+    def rows(self):
+        """Get the list of rows 
+        
+        Results is a dict with one key but that key changes depending on the results
+        This provides a way of getting at the rows list in an arbitrary way
+
+        """
+        if self.results:
+            vals = self.results.values()
+            if len(vals) == 1:
+                return self.results.values()[0]
+        
+        return []
+
+    @property
     def query(self):
         """The YQL query"""
         return self.query_params.get('q')
