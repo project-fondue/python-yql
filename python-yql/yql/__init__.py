@@ -5,14 +5,7 @@ Python YQL
 YQL client for Python
 
 Author: Stuart Colville http://muffinresearch.co.uk/
-
-.. sourcecode:: python
-    
-    import yql
-
-    >>> y = yql.Public()
-    >>> query = 'select * from flickr.photos.search where text="panda" limit 3';
-    >>> y.execute(query)
+Docs at: http://python-yql.org/
 
 TODO: Wrap json.loads in try/except
 TODO: More granular error handling
@@ -56,7 +49,7 @@ PUBLIC_URI = "http://query.yahooapis.com/v1/public/yql"
 PRIVATE_URI = "http://query.yahooapis.com/v1/yql"
 
 
-class YQL(object):
+class YQLObj(object):
     """A YQLObject is the object created as the result of a YQL query"""
     
     def __init__(self, result_dict):
@@ -77,7 +70,7 @@ class YQL(object):
     def query_params(self):
         """The query parameters of the uri used to call the YQL API"""
         if self.uri:
-            q_string = urlparse(self.uri).query
+            q_string = urlparse(self.uri)[4]
             return dict(parse_qsl(q_string))
         else:
             return {}
@@ -134,6 +127,7 @@ class YQL(object):
 
 
 class YQLError(Exception):
+    """Default Error"""
     pass
 
 
@@ -162,7 +156,9 @@ class Public(object):
         query_params = {}
         keys_from_query = self.get_placeholder_keys(query)
 
-        if keys_from_query and not params or (params and not hasattr(params, 'get')):
+        if keys_from_query and not params or (
+                                        params and not hasattr(params, 'get')):
+
             raise ValueError, "If you are using placeholders a dictionary "\
                                                 "of substitutions is required"
 
@@ -175,7 +171,7 @@ class Public(object):
                 keys_from_params = params.keys()
             except AttributeError:
                 raise ValueError, "Named parameters for substitution "\
-                                                       "must be passed as a dict"
+                                                    "must be passed as a dict"
 
             if set(keys_from_query) != set(keys_from_params):
                 raise ValueError, "Parameter keys don't match the query "\
@@ -220,7 +216,7 @@ class Public(object):
         url = self.get_uri(query, params, **kwargs)
         resp, content = self.http.request(url, "GET")
         if resp.get('status') == '200':
-            return YQL(json.loads(content))
+            return YQLObj(json.loads(content))
         else:
             raise YQLError, (resp, content)
 
@@ -255,7 +251,8 @@ class TwoLegged(Public):
             params.update(parameters)
 
         consumer = oauth.Consumer(self.api_key, self.secret)
-        request = oauth.Request(method="GET", url=resource_url, parameters=params)
+        request = oauth.Request(method="GET", url=resource_url, 
+                                                        parameters=params)
         request.sign_request(self.hmac_sha1_signature, consumer, None)
         
         return request
@@ -291,15 +288,15 @@ class ThreeLegged(TwoLegged):
     For an implementation this will require calling the following methods in order 
     the first time the user needs to authenticate
 
-    * ``get_auth_url_and_token`` (returns a token and the auth url)
+    * :meth:`get_token_and_auth_url` (returns a token and the auth url)
     * get verifier through callback or from screen
-    * ``get_access_token``  (returns the access token)
-    * ``execute`` - makes the request to the protected resource.
+    * :meth:`get_access_token`  (returns the access token)
+    * :meth:`execute` - makes the request to the protected resource.
 
     Once the access token has been provided subsequent requests can re-use it. 
     
     Access tokens expire after 1 hour, however they can be refreshed with 
-    the ``refresh_token`` method
+    the :meth:`refresh_token` method
 
 
     """
@@ -343,7 +340,7 @@ class ThreeLegged(TwoLegged):
 
         The verifier (required) should have been provided to the 
         user following login to at the url returned 
-        by the ``get_token_and_auth_url`` method.
+        by the :meth:`get_token_and_auth_url` method.
         
         If not you will need need to extract the auth_verifier 
         parameter from your callback url on the site where you 
@@ -354,7 +351,7 @@ class ThreeLegged(TwoLegged):
         calls.
 
         The stored token will also need to be refreshed periodically 
-        with ``refresh_token()``
+        with :meth:`refresh_token`
 
         """
 
@@ -459,7 +456,7 @@ class ThreeLegged(TwoLegged):
         resp, content = self.http.request(uri, "GET")
 
         if resp.get('status') == '200':
-            return YQL(json.loads(content))
+            return YQLObj(json.loads(content))
         else:
             raise YQLError, (resp, content)
 
@@ -471,15 +468,15 @@ class YahooToken(oauth.Token):
     """
 
     @staticmethod
-    def from_string(s):
+    def from_string(data_string):
         """Deserializes a token from a string like one returned by
         
         `to_string()`."""
  
-        if not len(s):
+        if not len(data_string):
             raise ValueError("Invalid parameter string.")
  
-        params = parse_qs(s, keep_blank_values=False)
+        params = parse_qs(data_string, keep_blank_values=False)
         if not len(params):
             raise ValueError("Invalid parameter string.")
  

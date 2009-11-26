@@ -132,7 +132,7 @@ def test_json_response_from_file():
     from httplib2 import Http
     y = yql.Public(httplib2_inst=Http())
     content = y.execute(query, {"dog": "fifi"})
-    assert content is not None
+    assert content.count == 3
 
 def test_api_key_and_secret_attrs():
     from httplib2 import Http
@@ -222,7 +222,7 @@ def test_three_legged_execution():
     y = yql.ThreeLegged('test','test2', httplib2_inst=Http())
     token = yql.YahooToken('test', 'test2')
     content = y.execute(query, {"dog": "fifi"}, token=token)
-    assert content is not None
+    assert content.count == 3
   
 @raises(yql.YQLError)
 @with_setup(set_up_http_from_file, tear_down_http_from_file)
@@ -238,7 +238,7 @@ def test_get_access_token_request():
     y = yql.ThreeLegged('test','test2', httplib2_inst=Http())
     new_token = yql.YahooToken('test', 'test2')
     content = y.get_access_token(token=new_token, verifier='test-verfier')
-    assert content is not None
+    assert content.count == 3
 
 @with_setup(set_up_http_from_file, tear_down_http_from_file)
 def test_get_access_token_request():
@@ -246,5 +246,6 @@ def test_get_access_token_request():
     y = yql.ThreeLegged('test','test2', httplib2_inst=Http())
     new_token = yql.YahooToken('test', 'test2')
     new_token.session_handle = 'sess_handle_test'
-    content = y.refresh_token(token=new_token)
-    assert content is not None
+    token = y.refresh_token(token=new_token)
+    assert hasattr(token, 'key')
+    assert hasattr(token, 'secret')

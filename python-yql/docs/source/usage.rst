@@ -2,7 +2,60 @@
 Usage
 =====
 
-There are three difference ways to use YQL. The public endpoint can be used to query public tables. Beyond this oauth is used to provide access to the private endpoint. First let's take a look at how to query the public endpoint.
+.. currentmodule:: yql
+
+There are three difference ways to use YQL. The public endpoint can be used to query public tables. Oauth is used to provide access to the private endpoint. First let's take a look at how we can access the data returned from a query. After that we'll look at differences between the Public and Private endpoints.
+
+
+Accessing the data returned from a query
+========================================
+
+Here's a basic query
+
+.. sourcecode:: python
+
+    >>> import yql
+    >>> y = yql.Public()
+    >>> res = y.execute("use 'http://yqlblog.net/samples/search.imageweb.xml' as searchimageweb; select title from searchimageweb where query='pizza' limit 3")
+
+When the query is successful a YQL object is returned. (New in 0.3)
+
+The YQL object provides a simple interface for getting at the data. To illustrate let's look at an example:
+
+.. sourcecode:: python
+
+    >>> print res
+    <yql.YQL object at 0xb77adc2c>
+    >>> res.rows
+    [{u'title': u'<b>Pizza</b> Hut'}, {u'title': u"Domino's <b>Pizza</b> -
+    Official Site"}, {u'title': u"Papa John's"}]
+    >>> res.rows[0]
+    {u'title': u'<b>Pizza</b> Hut'}
+    >>> res.rows[1]
+    {u'title': u"Domino's <b>Pizza</b> - Official Site"}
+    >>> res.query
+    u"use 'http://yqlblog.net/samples/search.imageweb.xml' as searchimageweb; select title from searchimageweb where query='pizza' limit 3"
+    >>> res.uri
+    u'http://query.yahooapis.com/v1/yql?q=use+%27http%3A%2F%2Fyqlblog.net%2Fsamples%2Fsearch.imageweb.xml%27+as+searchimageweb%3B+select+title+from+searchimageweb+where+query%3D%27pizza%27+limit+3'
+    >>> res.count
+    3
+
+For the most part it will make sense to use the :attr:`YQLObj.rows` property to access your data as this returns a list of the results. This makes looping over the results as easy as:
+
+.. sourcecode:: python
+    
+    >>> result = y.execute('select * from flickr.photos.search where text="panda" limit 3')
+    >>> result.rows
+    [{u'isfamily': u'0', u'title': u'Panda can has fruit', u'farm': u'3', u'ispublic': u'1', u'server': u'2605', u'isfriend': u'0', u'secret': u'62ccb5d94e', u'owner': u'99045337@N00', u'id': u'4135649462'}, {u'isfamily': u'0', u'title': u'Hey Panda', u'farm': u'3', u'ispublic': u'1', u'server': u'2799', u'isfriend': u'0', u'secret': u'1632cb8ab8', u'owner': u'99045337@N00', u'id': u'4134889385'}, {u'isfamily': u'0', u'title': u'Panda Lin Hui', u'farm': u'3', u'ispublic': u'1', u'server': u'2737', u'isfriend': u'0', u'secret': u'099b30a0a4', u'owner': u'37843112@N07', u'id': u'4135631774'}]
+    >>> for row in result.rows:
+    ...     print row.get('title')
+    ... 
+    Panda can has fruit
+    Hey Panda
+    Panda Lin Hui
+    >>> 
+
+If at any point you want to access the raw data you can use the :attr:`YQLObj.raw` property to access the full dataset as converted from JSON.
 
 Public API Calls
 ================
@@ -13,9 +66,10 @@ The following example shows a simple query using the public endpoint.
 
     >>> import yql
     >>> y = yql.Public()
-    >>> query = 'select * from flickr.photos.search where text=panda limit 3';
-    >>> y.execute(query)
-
+    >>> query = 'select * from flickr.photos.search where text="panda" limit 3';
+    >>> result = y.execute(query)
+    >>> print result
+    <yql.YQL object at 0xb77adc2c>
 
 
 Using Placeholders in Queries
@@ -72,7 +126,7 @@ Here's an example:
     y3 = yql.ThreeLegged(API_KEY, SECRET)
     query = 'select * from social.connections where owner_guid=me'
     
-    request_token, auth_url = y3.get_auth_url_and_token()
+    request_token, auth_url = y3.get_token_and_auth_url()
     
     # -- USER AUTHENTICATES HERE --
     
@@ -80,24 +134,26 @@ Here's an example:
     y3.execute(query, token=access_token) 
 
 
-In the example above the first call made uses the method ``get_auth_url_and_token``. This returns a tuple containing the request token and an authentication url. It's up to the implentation to then send or prompt the user to visit that authenication url in order to login to Yahoo.
+.. currentmodule:: yql.ThreeLegged
+
+In the example above the first call made uses the method :meth:`get_token_and_auth_url`. This returns a tuple containing the request token and an authentication url. It's up to the implentation to then send or prompt the user to visit that authenication url in order to login to Yahoo.
     
-If a callback was specified in the ``get_auth_url_and_token`` method then your user will be sent to that url when they login. The url will automatically be sent the "verifier" string to use in the "get_access_token" method.
+If a callback was specified in the :meth:`get_token_and_auth_url` method then your user will be sent to that url when they login. The url will automatically be sent the "verifier" string to use in the "get_access_token" method.
 
 If no callback was specified or was explcitly marked as 'oob' (the default value) then the user will be shown a verfier code which they will have to provide to your application.
 
-The next call, ``get_access_token`` requires the request token and verifier to be sent in order to provide the token that can be used to make authenicated requests.
+The next call, :meth:`get_access_token` requires the request token and verifier to be sent in order to provide the token that can be used to make authenicated requests.
 
 Once you have got the ``access_token`` it should be used to execute the query.
 
 The Token can be re-used for subsequent requests but after an hour it will expire and will need to be refreshed.
 
-The ``refresh_token()`` method can be used to request a new token using the expired token.
+The :meth:`refresh_token` method can be used to request a new token using the expired token.
 
 Using Storage Classes
 =====================
 
-``yql.storage`` provides a basic way to store Tokens on the filesystem to make it easier to re-use access_tokens in YQL queries.
+:mod:`yql.storage` provides a basic way to store Tokens on the filesystem to make it easier to re-use access_tokens in YQL queries.
 
 Here's an example:
 
@@ -132,10 +188,10 @@ Here's an example:
     print y3.execute(query, token=token) 
 
 
-This example shows a way to do the initial dance including authentication. The access token provided is then stashed away in a file for re-use on subsequent calls. When re-used the ``check_token()`` method is used to check if the token needs refreshing. If it's over an hour old the token is refreshed and returned.
+This example shows a way to do the initial dance including authentication. The access token provided is then stashed away in a file for re-use on subsequent calls. When re-used the :meth:`check_token` method is used to check if the token needs refreshing. If it's over an hour old the token is refreshed and returned.
 
-The Storage classes are designed to be extended as necessary so that the user can implement a different backend for storing tokens for re-use. An example would be to use memcache for storage. To create a new storage class all that's needed is to subclass yql.storage.BaseTokenStorage.
+The Storage classes are designed to be extended as necessary so that the user can implement a different backend for storing tokens for re-use. An example would be to use memcache for storage. To create a new storage class all that's needed is to subclass :class:`yql.storage.BaseTokenStorage`.
 
 .. note::
     
-    It's worth bearing in mind that ``yql.storage.FileTokenStorage`` at this point in time, is not intended for heavy duty production use and it's recommended to create a subclass tailored to your own needs. 
+    It's worth bearing in mind that :class:`yql.storage.FileTokenStorage` at this point in time, is not intended for heavy duty production use and it's recommended to create a subclass tailored to your own needs. 
