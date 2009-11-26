@@ -25,7 +25,7 @@ The YQL object provides a simple interface for getting at the data. To illustrat
 .. sourcecode:: python
 
     >>> print res
-    <yql.YQL object at 0xb77adc2c>
+    <yql.YQLObj object at 0xb77adc2c>
     >>> res.rows
     [{u'title': u'<b>Pizza</b> Hut'}, {u'title': u"Domino's <b>Pizza</b> -
     Official Site"}, {u'title': u"Papa John's"}]
@@ -69,7 +69,7 @@ The following example shows a simple query using the public endpoint.
     >>> query = 'select * from flickr.photos.search where text="panda" limit 3';
     >>> result = y.execute(query)
     >>> print result
-    <yql.YQL object at 0xb77adc2c>
+    <yql.YQLObj object at 0xb77adc2c>
 
 
 Using Placeholders in Queries
