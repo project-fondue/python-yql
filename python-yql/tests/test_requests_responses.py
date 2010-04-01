@@ -2,16 +2,17 @@ import os
 import urlparse
 import httplib2
 from urllib import urlencode
-from email import message_from_string, message_from_file
+from email import message_from_file
 from nose import with_setup
 from nose.tools import raises
+
 import oauth2 as oauth
 import yql
 
 try:
-    from urlparse import parse_qs, parse_qsl
+    from urlparse import parse_qsl
 except ImportError:
-    from cgi import parse_qs, parse_qsl
+    from cgi import parse_qsl
 
 HTTP_SRC_DIR = os.path.join(os.path.dirname(__file__), "http_src/")
 
@@ -120,11 +121,11 @@ def test_name_param_inserted_for_public_yql():
 
 @raises(TypeError)
 def test_yql_with_2leg_auth_raises_typerror():
-    y = TestTwoLegged()
+    TestTwoLegged()
 
 @raises(TypeError)
 def test_yql_with_3leg_auth_raises_typerror():
-    y = TestThreeLegged()
+    TestThreeLegged()
 
 @with_setup(set_up_http_from_file, tear_down_http_from_file)
 def test_json_response_from_file():
@@ -135,26 +136,22 @@ def test_json_response_from_file():
     assert content.count == 3
 
 def test_api_key_and_secret_attrs():
-    from httplib2 import Http
     y = yql.TwoLegged('test-api-key', 'test-secret')
     assert y.api_key == 'test-api-key'
     assert y.secret == 'test-secret'
 
 def test_api_key_and_secret_attrs2():
-    from httplib2 import Http
     y = yql.ThreeLegged('test-api-key', 'test-secret')
     assert y.api_key == 'test-api-key'
     assert y.secret == 'test-secret'   
 
 def test_get_base_params():
-    from httplib2 import Http
     y = yql.ThreeLegged('test-api-key', 'test-secret')
     result = y.get_base_params()
     assert set(['oauth_nonce', 'oauth_version', 'oauth_timestamp']) \
                                                     == set(result.keys())
 
 def test_get_two_legged_request_keys():
-    from httplib2 import Http
     y = yql.TwoLegged('test-api-key', 'test-secret')
     # Accessed this was because it's private
     request =  y._TwoLegged__two_legged_request('http://google.com')
@@ -163,7 +160,6 @@ def test_get_two_legged_request_keys():
         'oauth_version', 'oauth_signature']) == set(request.keys())
 
 def test_get_two_legged_request_values():
-    from httplib2 import Http
     y = yql.TwoLegged('test-api-key', 'test-secret')
     # Accessed this was because it's private
     request =  y._TwoLegged__two_legged_request('http://google.com')
@@ -172,7 +168,6 @@ def test_get_two_legged_request_values():
     assert request['oauth_version'] == '1.0'
 
 def test_get_two_legged_request_param():
-    from httplib2 import Http
     y = yql.TwoLegged('test-api-key', 'test-secret')
     # Accessed this way because it's private
     request =  y._TwoLegged__two_legged_request('http://google.com', 
@@ -202,7 +197,7 @@ def test_raises_for_three_legged_with_no_token():
     query = 'SELECT * from foo'
     from httplib2 import Http
     y = TestThreeLegged('test-api-key', 'test-secret', httplib2_inst=Http())
-    request = y.execute(query)
+    y.execute(query)
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_request_for_three_legged():
@@ -224,24 +219,8 @@ def test_three_legged_execution():
     content = y.execute(query, {"dog": "fifi"}, token=token)
     assert content.count == 3
   
-@raises(yql.YQLError)
 @with_setup(set_up_http_from_file, tear_down_http_from_file)
-def test_get_access_token_request():
-    from httplib2 import Http
-    y = yql.ThreeLegged('test','test2', httplib2_inst=Http())
-    new_token = yql.YahooToken('test', 'test2')
-    content = y.get_access_token(token=new_token, verifier='test-verfier')
-
-@with_setup(set_up_http_from_file, tear_down_http_from_file)
-def test_get_access_token_request():
-    from httplib2 import Http
-    y = yql.ThreeLegged('test','test2', httplib2_inst=Http())
-    new_token = yql.YahooToken('test', 'test2')
-    content = y.get_access_token(token=new_token, verifier='test-verfier')
-    assert content.count == 3
-
-@with_setup(set_up_http_from_file, tear_down_http_from_file)
-def test_get_access_token_request():
+def test_get_access_token_request3():
     from httplib2 import Http
     y = yql.ThreeLegged('test','test2', httplib2_inst=Http())
     new_token = yql.YahooToken('test', 'test2')
@@ -249,3 +228,4 @@ def test_get_access_token_request():
     token = y.refresh_token(token=new_token)
     assert hasattr(token, 'key')
     assert hasattr(token, 'secret')
+

@@ -36,7 +36,7 @@ except ImportError:
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 
 __author__ = 'Stuart Colville'
-__version__ = '0.3'
+__version__ = '0.4'
 __all__ = ['Public', 'TwoLegged', 'ThreeLegged']
 
 QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
@@ -148,7 +148,6 @@ class Public(object):
         self.secret = shared_secret
         self.http = httplib2_inst or Http()
         self.uri = PUBLIC_URI
-     
 
     def get_query_params(self, query, params, **kwargs):
         """Get the query params and validate placeholders"""

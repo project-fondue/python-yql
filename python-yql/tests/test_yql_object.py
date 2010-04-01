@@ -19,7 +19,8 @@ yqlobj2 = YQLObj({})
 
 @raises(AttributeError)
 def test_yql_object_one():
-     yqlobj.query = 1
+    """Test that invalid query raises AttributeError"""
+    yqlobj.query = 1
 
 def test_yqlobj_uri():
     assert yqlobj.uri == u"http://query.yahooapis.com/v1/yql?q=select+*+from+flickr.photos.search+where+text%3D%22panda%22+limit+3"
