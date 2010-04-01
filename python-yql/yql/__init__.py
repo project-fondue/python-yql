@@ -149,9 +149,9 @@ class Public(object):
         self.http = httplib2_inst or Http()
         self.uri = PUBLIC_URI
 
+    
     def get_query_params(self, query, params, **kwargs):
         """Get the query params and validate placeholders"""
-
         query_params = {}
         keys_from_query = self.get_placeholder_keys(query)
 
@@ -178,10 +178,9 @@ class Public(object):
             else:
                 query_params.update(params)
 
-
         query_params['q'] = query
-        query_params['format'] = kwargs.get('format') or  'json'
-        
+        query_params['format'] = 'json'
+
         env = kwargs.get('env')
         if env:
             query_params['env'] = env
