@@ -75,7 +75,7 @@ def set_up_http_request_data():
 def tear_down_http_request_data():
     httplib2.Http = old_httplib2
 
-def surrogate_execute(self, query, params=None, **kwargs):
+def execute_return_uri(self, query, params=None, **kwargs):
     """A surrogate execute method that returns the uri"""
     return self.get_uri(query, params, **kwargs)
 
@@ -91,9 +91,9 @@ class TestThreeLegged(yql.ThreeLegged):
     """Subclass of YQLTwoLegged to allow returning of the request data"""    
     pass
 
-setattr(TestPublic, 'execute', surrogate_execute)
-setattr(TestTwoLegged, 'execute', surrogate_execute)
-setattr(TestThreeLegged, 'execute', surrogate_execute)
+setattr(TestPublic, 'execute', execute_return_uri)
+setattr(TestTwoLegged, 'execute', execute_return_uri)
+setattr(TestThreeLegged, 'execute', execute_return_uri)
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_urlencoding_for_public_yql():

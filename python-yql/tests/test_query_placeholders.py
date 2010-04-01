@@ -20,6 +20,13 @@ def test_incorrect_args_raises_valueerror():
     y.execute(query, params) 
 
 @raises(ValueError)
+def test_params_raises_when_not_dict():
+    y = yql.Public()
+    query = "SELECT * from foo where dog=@dog"
+    params = ['test']
+    y.execute(query, params) 
+
+@raises(ValueError)
 def test_unecessary_args_raises_valueerror():
     y = yql.Public()
     query = "SELECT * from foo where dog='test'"

@@ -19,18 +19,19 @@ import pprint
 
 try:
     import json
-except ImportError:
+except ImportError: # pragma: no cover
     import simplejson as json
 
 from urlparse import urlparse
 from urllib import urlencode
 from httplib2 import Http
-import oauth2 as oauth
 
+from yql.utils import get_http_method
+import oauth2 as oauth
 
 try:
     from urlparse import parse_qs, parse_qsl
-except ImportError:
+except ImportError: # pragma: no cover
     from cgi import parse_qs, parse_qsl
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
@@ -156,7 +157,7 @@ class Public(object):
         keys_from_query = self.get_placeholder_keys(query)
 
         if keys_from_query and not params or (
-                                        params and not hasattr(params, 'get')):
+                                     params and not hasattr(params, 'get')):
 
             raise ValueError, "If you are using placeholders a dictionary "\
                                                 "of substitutions is required"
@@ -166,11 +167,7 @@ class Public(object):
                                 "but the query doesn't have any placeholders"
 
         elif keys_from_query and params:
-            try:
-                keys_from_params = params.keys()
-            except AttributeError:
-                raise ValueError, "Named parameters for substitution "\
-                                                    "must be passed as a dict"
+            keys_from_params = params.keys()
 
             if set(keys_from_query) != set(keys_from_params):
                 raise ValueError, "Parameter keys don't match the query "\
@@ -212,7 +209,8 @@ class Public(object):
     def execute(self, query, params=None, **kwargs):
         """Execute YQL query"""    
         url = self.get_uri(query, params, **kwargs)
-        resp, content = self.http.request(url, "GET")
+        http_method = get_http_method(query)
+        resp, content = self.http.request(url, http_method)
         if resp.get('status') == '200':
             return YQLObj(json.loads(content))
         else:
@@ -279,12 +277,14 @@ class ThreeLegged(TwoLegged):
         
     * Request a token
     * Get a authentication url
-    * User uses the auth url to login which will redirect to a callback or shows a verfier string on screen
-    * Verifier is read at the callback url or manually provided to get the access token
+    * User uses the auth url to login which will redirect to a callback 
+      or shows a verfier string on screen
+    * Verifier is read at the callback url or manually provided to get 
+      the access token
     * resources is access
 
-    For an implementation this will require calling the following methods in order 
-    the first time the user needs to authenticate
+    For an implementation this will require calling the following methods
+    in order the first time the user needs to authenticate
 
     * :meth:`get_token_and_auth_url` (returns a token and the auth url)
     * get verifier through callback or from screen
@@ -375,7 +375,6 @@ class ThreeLegged(TwoLegged):
             raise YQLError, (resp, content)
 
 
-    
     def check_token(self, token):
         """Check to see if a token has expired"""
         
@@ -387,7 +386,7 @@ class ThreeLegged(TwoLegged):
             
         return token
 
-    
+
     def refresh_token(self, token):
         """Access Tokens only last for one hour from the point of being issued. 
 
@@ -424,7 +423,6 @@ class ThreeLegged(TwoLegged):
             raise YQLError, (resp, content)
 
 
-
     def get_uri(self, query, params=None, token=None, **kwargs):
         """Get the the request url"""
         query_params = self.get_query_params(query, params, **kwargs)
@@ -451,7 +449,8 @@ class ThreeLegged(TwoLegged):
         """Execute YQL Note in this case the token is required"""    
        
         uri = self.get_uri(query, params, token,  **kwargs)
-        resp, content = self.http.request(uri, "GET")
+        http_method = get_http_method(query)
+        resp, content = self.http.request(uri, http_method)
 
         if resp.get('status') == '200':
             return YQLObj(json.loads(content))
