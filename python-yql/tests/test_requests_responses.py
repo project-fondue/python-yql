@@ -1,12 +1,12 @@
 import os
 import urlparse
-import httplib2
 from urllib import urlencode
 from email import message_from_file
-from nose import with_setup
-from nose.tools import raises
 
+from nose.tools import raises
+from nose import with_setup
 import oauth2 as oauth
+import httplib2
 import yql
 
 try:
@@ -61,19 +61,21 @@ class RequestDataHttpReplacement:
         """return the request data"""
         return uri, args, kwargs
 
-old_httplib2 = httplib2.Http
-
 def set_up_http_from_file():
     httplib2.Http = MyHttpReplacement
+    httplib2._Http = httplib2.Http
 
 def tear_down_http_from_file():
-    httplib2.Http = old_httplib2
+    httplib2.Http = httplib2._Http
+    delattr(httplib2, '_Http')
 
 def set_up_http_request_data():
     httplib2.Http = RequestDataHttpReplacement
+    httplib2._Http = httplib2.Http
 
 def tear_down_http_request_data():
-    httplib2.Http = old_httplib2
+    httplib2.Http = httplib2._Http
+    delattr(httplib2, '_Http')
 
 def execute_return_uri(self, query, params=None, **kwargs):
     """A surrogate execute method that returns the uri"""
@@ -98,24 +100,21 @@ setattr(TestThreeLegged, 'execute', execute_return_uri)
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_urlencoding_for_public_yql():
     query = 'SELECT * from foo'
-    from httplib2 import Http
-    y = TestPublic(httplib2_inst=Http())
+    y = TestPublic(httplib2_inst=httplib2.Http())
     uri = y.execute(query)
     assert uri == "http://query.yahooapis.com/v1/public/yql?q=SELECT+%2A+from+foo&format=json"
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_env_for_public_yql():
     query = 'SELECT * from foo'
-    from httplib2 import Http
-    y = TestPublic(httplib2_inst=Http())
+    y = TestPublic(httplib2_inst=httplib2.Http())
     uri = y.execute(query, env="http://foo.com")
     assert uri.find(urlencode({"env":"http://foo.com"})) > -1
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_name_param_inserted_for_public_yql():
     query = 'SELECT * from foo WHERE dog=@dog'
-    from httplib2 import Http
-    y = TestPublic(httplib2_inst=Http())
+    y = TestPublic(httplib2_inst=httplib2.Http())
     uri = y.execute(query, {"dog": "fifi"})
     assert uri.find('dog=fifi') > -1
 
@@ -130,8 +129,7 @@ def test_yql_with_3leg_auth_raises_typerror():
 @with_setup(set_up_http_from_file, tear_down_http_from_file)
 def test_json_response_from_file():
     query = 'SELECT * from foo WHERE dog=@dog'
-    from httplib2 import Http
-    y = yql.Public(httplib2_inst=Http())
+    y = yql.Public(httplib2_inst=httplib2.Http())
     content = y.execute(query, {"dog": "fifi"})
     assert content.count == 3
 
@@ -177,16 +175,14 @@ def test_get_two_legged_request_param():
 @with_setup(set_up_http_from_file, tear_down_http_from_file)
 def test_get_two_legged_from_file():
     query = 'SELECT * from foo'
-    from httplib2 import Http
-    y = yql.TwoLegged('test-api-key', 'test-secret', httplib2_inst=Http())
+    y = yql.TwoLegged('test-api-key', 'test-secret', httplib2_inst=httplib2.Http())
     # Accessed this was because it's private
     assert y.execute(query) is not None
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_request_for_two_legged():
     query = 'SELECT * from foo'
-    from httplib2 import Http
-    y = TestTwoLegged('test-api-key', 'test-secret', httplib2_inst=Http())
+    y = TestTwoLegged('test-api-key', 'test-secret', httplib2_inst=httplib2.Http())
     signed_url = y.execute(query)
     qs  = dict(parse_qsl(signed_url.split('?')[1]))
     assert qs['q'] == query
@@ -195,15 +191,13 @@ def test_request_for_two_legged():
 @raises(ValueError)
 def test_raises_for_three_legged_with_no_token():
     query = 'SELECT * from foo'
-    from httplib2 import Http
-    y = TestThreeLegged('test-api-key', 'test-secret', httplib2_inst=Http())
+    y = TestThreeLegged('test-api-key', 'test-secret', httplib2_inst=httplib2.Http())
     y.execute(query)
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_request_for_three_legged():
     query = 'SELECT * from foo'
-    from httplib2 import Http
-    y = TestThreeLegged('test-api-key', 'test-secret', httplib2_inst=Http())
+    y = TestThreeLegged('test-api-key', 'test-secret', httplib2_inst=httplib2.Http())
     token = oauth.Token.from_string('oauth_token=foo&oauth_token_secret=bar')
     signed_url = y.execute(query, token=token)
     qs  = dict(parse_qsl(signed_url.split('?')[1]))
@@ -213,16 +207,22 @@ def test_request_for_three_legged():
 @with_setup(set_up_http_from_file, tear_down_http_from_file)
 def test_three_legged_execution():
     query = 'SELECT * from foo WHERE dog=@dog'
-    from httplib2 import Http
-    y = yql.ThreeLegged('test','test2', httplib2_inst=Http())
+    y = yql.ThreeLegged('test','test2', httplib2_inst=httplib2.Http())
     token = yql.YahooToken('test', 'test2')
     content = y.execute(query, {"dog": "fifi"}, token=token)
     assert content.count == 3
-  
+
+@raises(ValueError)
+@with_setup(set_up_http_from_file, tear_down_http_from_file)
+def test_three_legged_execution_raises():
+    y = yql.ThreeLegged('test','test2', httplib2_inst=httplib2.Http())
+    y.uri = "fail"
+    token = yql.YahooToken('tes1t', 'test2')
+    content = y.execute("SELECT foo meh meh ", token=token)
+ 
 @with_setup(set_up_http_from_file, tear_down_http_from_file)
 def test_get_access_token_request3():
-    from httplib2 import Http
-    y = yql.ThreeLegged('test','test2', httplib2_inst=Http())
+    y = yql.ThreeLegged('test','test-does-not-exist', httplib2_inst=httplib2.Http())
     new_token = yql.YahooToken('test', 'test2')
     new_token.session_handle = 'sess_handle_test'
     token = y.refresh_token(token=new_token)

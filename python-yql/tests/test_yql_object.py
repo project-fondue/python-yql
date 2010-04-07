@@ -41,6 +41,9 @@ def test_yqlobj_results():
 def test_yqlobj_raw():
     assert yqlobj.raw == data_dict.get('query')
 
+def test_yqlobj_diagnostics():
+    assert yqlobj.diagnostics == data_dict.get('query').get('diagnostics')
+
 def test_query_is_none():
     assert yqlobj2.query is None
 

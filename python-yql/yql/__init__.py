@@ -118,11 +118,11 @@ class YQLObj(object):
         """The query diagnostics"""
         return self._raw.get('diagnostics')
 
-    def pprint_raw(self, indent=4):
+    def pprint_raw(self, indent=4): # pragma: no cover
         """Pretty print the raw data"""
         pprint.pprint(self._raw, indent=indent)
 
-    def pformat_raw(self, indent=4):
+    def pformat_raw(self, indent=4): # pragma: no cover
         """Pretty format the raw data"""
         return pprint.pformat(self._raw, indent=indent)
 

@@ -1,9 +1,7 @@
 """Set of tests for the placeholder checking"""
 
 import yql
-from nose import with_setup
 from nose.tools import raises
-
 
 @raises(ValueError)
 def test_empty_args_raises_valueerror():
