@@ -214,7 +214,7 @@ def test_three_legged_execution():
 
 @raises(ValueError)
 @with_setup(set_up_http_from_file, tear_down_http_from_file)
-def test_three_legged_execution_raises():
+def test_three_legged_execution_raises_value_error_with_invalid_uri():
     y = yql.ThreeLegged('test','test2', httplib2_inst=httplib2.Http())
     y.uri = "fail"
     token = yql.YahooToken('tes1t', 'test2')
