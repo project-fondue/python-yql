@@ -102,7 +102,7 @@ def test_urlencoding_for_public_yql():
     query = 'SELECT * from foo'
     y = TestPublic(httplib2_inst=httplib2.Http())
     uri = y.execute(query)
-    assert uri == "http://query.yahooapis.com/v1/public/yql?q=SELECT+%2A+from+foo&format=json"
+    assert uri == "https://query.yahooapis.com/v1/public/yql?q=SELECT+%2A+from+foo&format=json"
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_env_for_public_yql():

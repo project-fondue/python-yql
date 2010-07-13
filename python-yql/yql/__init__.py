@@ -46,8 +46,8 @@ REQUEST_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_request_token'
 ACCESS_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_token'
 AUTHORIZATION_URL = 'https://api.login.yahoo.com/oauth/v2/request_auth'
 
-PUBLIC_URI = "http://query.yahooapis.com/v1/public/yql"
-PRIVATE_URI = "http://query.yahooapis.com/v1/yql"
+PUBLIC_URI = "https://query.yahooapis.com/v1/public/yql"
+PRIVATE_URI = "https://query.yahooapis.com/v1/yql"
 
 
 class YQLObj(object):
@@ -210,7 +210,15 @@ class Public(object):
         """Execute YQL query"""    
         url = self.get_uri(query, params, **kwargs)
         http_method = get_http_method(query)
-        resp, content = self.http.request(url, http_method)
+
+        if http_method in ["DELETE", "PUT", "POST"]:
+            parsed_url = urlparse(url)
+            data = parsed_url[4]
+            base_url = "%s://%s%s%s" % parsed_url[0:4] 
+            resp, content = self.http.request(
+                            url, http_method, data)
+        else:
+            resp, content = self.http.request(url, http_method)
         if resp.get('status') == '200':
             return YQLObj(json.loads(content))
         else:
