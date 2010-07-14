@@ -55,6 +55,7 @@ class YQLObj(object):
     
     def __init__(self, result_dict):
         """Init query object"""
+        print result_dict
         self._raw = result_dict and result_dict.get('query') or {}
 
     @property
@@ -214,11 +215,11 @@ class Public(object):
         if http_method in ["DELETE", "PUT", "POST"]:
             parsed_url = urlparse(url)
             data = parsed_url[4]
-            base_url = "%s://%s%s%s" % parsed_url[0:4] 
             resp, content = self.http.request(
-                            url, http_method, data)
+                            url, http_method, body=data)
         else:
             resp, content = self.http.request(url, http_method)
+        print resp, content, url
         if resp.get('status') == '200':
             return YQLObj(json.loads(content))
         else:
@@ -247,18 +248,20 @@ class TwoLegged(Public):
         return params 
    
   
-    def __two_legged_request(self, resource_url, parameters=None):
+    def __two_legged_request(self, resource_url, parameters=None, method=None):
         """Sign a request for two-legged authentication"""
         
         params = self.get_base_params()
         if parameters:
             params.update(parameters)
 
+        if not method:
+            method = "GET"
+
         consumer = oauth.Consumer(self.api_key, self.secret)
-        request = oauth.Request(method="GET", url=resource_url, 
+        request = oauth.Request(method=method, url=resource_url, 
                                                         parameters=params)
         request.sign_request(self.hmac_sha1_signature, consumer, None)
-        
         return request
     
     
@@ -266,8 +269,10 @@ class TwoLegged(Public):
         """Get the the request url"""
         query_params = self.get_query_params(query, params, **kwargs)
         url = '%s?%s' % (self.uri, urlencode(query_params))
-        request = self.__two_legged_request(url, parameters=query_params)
-        
+    
+        http_method = get_http_method(query)
+        request = self.__two_legged_request(url, 
+                       parameters=query_params, method=http_method)
         return "%s?%s" % (self.uri, request.to_postdata()) 
 
 
@@ -431,10 +436,12 @@ class ThreeLegged(TwoLegged):
             raise YQLError, (resp, content)
 
 
-    def get_uri(self, query, params=None, token=None, **kwargs):
+    def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
         query_params = self.get_query_params(query, params, **kwargs)
         query_string = urlencode(query_params)
+
+        token = kwargs.get("token")
 
         if not token:
             raise ValueError, "Without a token three-legged-auth cannot be"\
@@ -451,19 +458,6 @@ class ThreeLegged(TwoLegged):
                             self.hmac_sha1_signature, self.consumer, token)
 
         return "%s?%s" % (self.uri,  oauth_request.to_postdata())
-            
-            
-    def execute(self, query, params=None, token=None, **kwargs):
-        """Execute YQL Note in this case the token is required"""    
-       
-        uri = self.get_uri(query, params, token,  **kwargs)
-        http_method = get_http_method(query)
-        resp, content = self.http.request(uri, http_method)
-
-        if resp.get('status') == '200':
-            return YQLObj(json.loads(content))
-        else:
-            raise YQLError, (resp, content)
 
 
 class YahooToken(oauth.Token):
