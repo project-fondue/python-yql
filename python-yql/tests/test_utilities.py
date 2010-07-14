@@ -11,6 +11,12 @@ TEST_DATA = (
     ("update foo", "PUT"),
     ("DELETE from", "DELETE"),
     ("delete from", "DELETE"),
+    ("delete from", "DELETE"),
+    ("""INSERT INTO yql.queries.query (name, query) 
+        VALUES ("weather", "SELECT * FROM weather.forecast 
+            WHERE location=90210")""", "POST"),
+    ("SHOW tables", "GET"),
+    ("DESC tablename", "GET"),
 )
 
 def test_verb_from_query():
