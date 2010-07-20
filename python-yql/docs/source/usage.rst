@@ -4,7 +4,9 @@ Usage
 
 .. currentmodule:: yql
 
-There are three difference ways to use YQL. The public endpoint can be used to query public tables. Oauth is used to provide access to the private endpoint. First let's take a look at how we can access the data returned from a query. After that we'll look at differences between the Public and Private endpoints.
+There are three different ways to use YQL. The public endpoint can be used to query public tables. Oauth is used to provide access to the private endpoint which uses both two-legged and three-legged oauth. 
+
+First let's take a look at how we can access the data returned from a query. After that we'll look at differences between the Public and Private endpoints.
 
 
 Accessing the data returned from a query
@@ -102,7 +104,6 @@ Two-legged Auth
 
 Here's an example of using Two-legged authentication in Python YQL.
 
-
 .. sourcecode:: python
 
     import yql 
@@ -140,7 +141,7 @@ In the example above the first call made uses the method :meth:`get_token_and_au
     
 If a callback was specified in the :meth:`get_token_and_auth_url` method then your user will be sent to that url when they login. The url will automatically be sent the "verifier" string to use in the "get_access_token" method.
 
-If no callback was specified or was explcitly marked as 'oob' (the default value) then the user will be shown a verfier code which they will have to provide to your application.
+If no callback was specified or was explicitly marked as 'oob' (the default value) then the user will be shown a verfier code which they will have to provide to your application.
 
 The next call, :meth:`get_access_token` requires the request token and verifier to be sent in order to provide the token that can be used to make authenicated requests.
 
@@ -164,7 +165,6 @@ Here's an example:
 
     y3 = yql.ThreeLegged(API_KEY, SECRET)
 
-    token_cache_name = "foo"
     path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'cache'))
     token_store = FileTokenStore(path, secret='gfdlgkfruwopiruowsd')
 

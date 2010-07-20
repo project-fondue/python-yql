@@ -26,7 +26,6 @@ try:
 except ImportError:
     raise SkipTest
 
-
 class LiveTestCase(TestCase):
     """A test case containing live tests"""
         
