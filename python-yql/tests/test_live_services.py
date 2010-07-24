@@ -40,6 +40,23 @@ class LiveTestCase(TestCase):
         res = y.execute(query)
         assert res.rows["results"]["nodeKeyVal"]["shortUrl"] == "http://yhoo.it/9PPTOr"
 
+    def test_public_request(self):
+        """Test public two-legged request to flickr"""
+        query = """select * from flickr.photos.search where text="panda" LIMIT 3"""
+        y = yql.TwoLegged(YQL_API_KEY, YQL_SHARED_SECRET)
+        res = y.execute(query)
+        assert len(res.rows) == 3
+
+    def test_two_legged_weather_select(self):
+        """Tests the weather tables using two-legged"""
+        query = """select * from weather.forecast where location in
+                (select id from xml where 
+                url='http://xoap.weather.com/search/search?where=london'
+                and itemPath='search.loc')"""
+        y = yql.TwoLegged(YQL_API_KEY, YQL_SHARED_SECRET)
+        res = y.execute(query)
+        assert len(res.rows) > 1
+
     def test_update_social_status(self):
         """Updates status"""
         y = yql.ThreeLegged(YQL_API_KEY, YQL_SHARED_SECRET)

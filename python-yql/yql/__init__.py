@@ -267,10 +267,9 @@ class TwoLegged(Public):
     def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
         query_params = self.get_query_params(query, params, **kwargs)
-        url = '%s?%s' % (self.uri, urlencode(query_params))
     
         http_method = get_http_method(query)
-        request = self.__two_legged_request(url, 
+        request = self.__two_legged_request(self.uri, 
                        parameters=query_params, method=http_method)
         return "%s?%s" % (self.uri, request.to_postdata()) 
 
