@@ -26,6 +26,3 @@ def test_verb_from_query():
 def find_verb_from_query(query, verb):
     assert get_http_method(query) == verb
 
-@raises(ValueError)
-def test_raises_value_error():
-    get_http_method("foo")

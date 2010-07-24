@@ -73,24 +73,6 @@ The following example shows a simple query using the public endpoint.
     >>> print result
     <yql.YQLObj object at 0xb77adc2c>
 
-
-Using Placeholders in Queries
-=============================
-
-This example uses the optional query placeholders which are strings prefixed with ``@`` which are substitutued by dictionary items whose keys match the placeholder. 
-
-.. note::
-
-    Python YQL validates placeholders to check that the correct number of substitutions are passed into the execute function.
-
-.. sourcecode:: python
-
-    >>> import yql
-    >>> y = yql.Public()
-    >>> query = 'select * from flickr.photos.search where text=@text limit 3';
-    >>> y.execute(query, {"text": "panda"})
-
-
 Private API Calls
 =================
 
@@ -194,4 +176,62 @@ The Storage classes are designed to be extended as necessary so that the user ca
 
 .. note::
     
-    It's worth bearing in mind that :class:`yql.storage.FileTokenStorage` at this point in time, is not intended for heavy duty production use and it's recommended to create a subclass tailored to your own needs. 
+    It's worth bearing in mind that :class:`yql.storage.FileTokenStorage` at this point in time, is not intended for heavy duty production use and it's recommended to create a subclass tailored to your own needs.
+
+
+Other YQL Features
+==================
+
+Here's some details on other YQL features that are supported by Python-yql. 
+
+Using data tables with environment files
+----------------------------------------
+
+YQL has feature that enables an externally hosted environment file to be used to import open tables for use with your app. 
+
+See the YQL documentation here: `YQL opentables environment <http://developer.yahoo.com/yql/guide/yql-opentables-import.html#yql-opentables-import-environment>_`
+
+To use this feature create and host your environment file and then use it like so:
+
+.. sourcecode:: python
+
+    >>> import yql
+    >>> y = yql.Public()
+    >>> env = "http://datatables.org/alltables.env"
+    >>> query = "SHOW tables;"
+    >>> y.execute(query, env=env)
+
+
+Using Placeholders in Queries
+-----------------------------
+
+This example uses the optional query placeholders which are strings prefixed with ``@`` which are substitutued by dictionary items whose keys match the placeholder. 
+
+.. note::
+
+    Python YQL validates placeholders to check that the correct number of substitutions are passed into the execute function.
+
+.. sourcecode:: python
+
+    >>> import yql
+    >>> y = yql.Public()
+    >>> query = 'select * from flickr.photos.search where text=@text limit 3';
+    >>> y.execute(query, {"text": "panda"})
+
+
+Using INSERT, UPDATE and DELETE
+-------------------------------
+
+As of version (0.4) python-yql supports INSERT, UPDATE and DELETE queries.
+
+Here's an example of an INSERT using the bit.ly table:
+
+.. sourcecode:: python
+
+        query = """USE 'http://yqlblog.net/samples/bitly.shorten.xml'; 
+                   insert into bitly.shorten(login, apiKey, longUrl) 
+                   values('%s','%s','http://yahoo.com')""" % (
+                                            BITLY_USER, BITLY_API_KEY)
+        y = yql.Public()
+        res = y.execute(query)
+
