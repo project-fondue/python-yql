@@ -9,11 +9,11 @@ Python YQL
 
 Python YQL is a client library for making queries with `Yahoo Query Language <http://developer.yahoo.com/yql/>`_.
 
-
     The Yahoo! Query Language is an expressive SQL-like language that lets you query, filter, and join data across Web services. With YQL, apps run faster with fewer lines of code and a smaller network footprint.
 
     -- `YDN <http://developer.yahoo.com/yql/>`_
 
+Python YQL is written and maintained by `Stuart Colville <http://muffinresearch.co.uk>`_, along with contributions from the community.
 
 QuickStart
 ----------
