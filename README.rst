@@ -27,6 +27,11 @@ Source-code
 
 Branches exist at https://launchpad.net/python-yql
 
+Documentation
+=============
+
+Documentation can be found at http://python-yql.org/
+
 Contributions
 =============
 
