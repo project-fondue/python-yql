@@ -102,7 +102,7 @@ def test_urlencoding_for_public_yql():
     query = 'SELECT * from foo'
     y = TestPublic(httplib2_inst=httplib2.Http())
     uri = y.execute(query)
-    assert uri == "http://query.yahooapis.com/v1/public/yql?q=SELECT+%2A+from+foo&format=json"
+    assert uri == "https://query.yahooapis.com/v1/public/yql?q=SELECT+%2A+from+foo&format=json"
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_env_for_public_yql():
@@ -218,7 +218,7 @@ def test_three_legged_execution_raises_value_error_with_invalid_uri():
     y = yql.ThreeLegged('test','test2', httplib2_inst=httplib2.Http())
     y.uri = "fail"
     token = yql.YahooToken('tes1t', 'test2')
-    content = y.execute("SELECT foo meh meh ", token=token)
+    y.execute("SELECT foo meh meh ", token=token)
  
 @with_setup(set_up_http_from_file, tear_down_http_from_file)
 def test_get_access_token_request3():

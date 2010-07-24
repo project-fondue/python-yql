@@ -4,7 +4,9 @@ Usage
 
 .. currentmodule:: yql
 
-There are three difference ways to use YQL. The public endpoint can be used to query public tables. Oauth is used to provide access to the private endpoint. First let's take a look at how we can access the data returned from a query. After that we'll look at differences between the Public and Private endpoints.
+There are three different ways to use YQL. The public endpoint can be used to query public tables. Oauth is used to provide access to the private endpoint which uses both two-legged and three-legged oauth. 
+
+First let's take a look at how we can access the data returned from a query. After that we'll look at differences between the Public and Private endpoints.
 
 
 Accessing the data returned from a query
@@ -71,24 +73,6 @@ The following example shows a simple query using the public endpoint.
     >>> print result
     <yql.YQLObj object at 0xb77adc2c>
 
-
-Using Placeholders in Queries
-=============================
-
-This example uses the optional query placeholders which are strings prefixed with ``@`` which are substitutued by dictionary items whose keys match the placeholder. 
-
-.. note::
-
-    Python YQL validates placeholders to check that the correct number of substitutions are passed into the execute function.
-
-.. sourcecode:: python
-
-    >>> import yql
-    >>> y = yql.Public()
-    >>> query = 'select * from flickr.photos.search where text=@text limit 3';
-    >>> y.execute(query, {"text": "panda"})
-
-
 Private API Calls
 =================
 
@@ -101,7 +85,6 @@ Two-legged Auth
 ---------------
 
 Here's an example of using Two-legged authentication in Python YQL.
-
 
 .. sourcecode:: python
 
@@ -140,7 +123,7 @@ In the example above the first call made uses the method :meth:`get_token_and_au
     
 If a callback was specified in the :meth:`get_token_and_auth_url` method then your user will be sent to that url when they login. The url will automatically be sent the "verifier" string to use in the "get_access_token" method.
 
-If no callback was specified or was explcitly marked as 'oob' (the default value) then the user will be shown a verfier code which they will have to provide to your application.
+If no callback was specified or was explicitly marked as 'oob' (the default value) then the user will be shown a verfier code which they will have to provide to your application.
 
 The next call, :meth:`get_access_token` requires the request token and verifier to be sent in order to provide the token that can be used to make authenicated requests.
 
@@ -164,7 +147,6 @@ Here's an example:
 
     y3 = yql.ThreeLegged(API_KEY, SECRET)
 
-    token_cache_name = "foo"
     path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'cache'))
     token_store = FileTokenStore(path, secret='gfdlgkfruwopiruowsd')
 
@@ -194,4 +176,62 @@ The Storage classes are designed to be extended as necessary so that the user ca
 
 .. note::
     
-    It's worth bearing in mind that :class:`yql.storage.FileTokenStorage` at this point in time, is not intended for heavy duty production use and it's recommended to create a subclass tailored to your own needs. 
+    It's worth bearing in mind that :class:`yql.storage.FileTokenStorage` at this point in time, is not intended for heavy duty production use and it's recommended to create a subclass tailored to your own needs.
+
+
+Other YQL Features
+==================
+
+Here's some details on other YQL features that are supported by Python-yql. 
+
+Using data tables with environment files
+----------------------------------------
+
+YQL has feature that enables an externally hosted environment file to be used to import open tables for use with your app. 
+
+See the YQL documentation here: `YQL opentables environment <http://developer.yahoo.com/yql/guide/yql-opentables-import.html#yql-opentables-import-environment>_`
+
+To use this feature create and host your environment file and then use it like so:
+
+.. sourcecode:: python
+
+    >>> import yql
+    >>> y = yql.Public()
+    >>> env = "http://datatables.org/alltables.env"
+    >>> query = "SHOW tables;"
+    >>> y.execute(query, env=env)
+
+
+Using Placeholders in Queries
+-----------------------------
+
+This example uses the optional query placeholders which are strings prefixed with ``@`` which are substitutued by dictionary items whose keys match the placeholder. 
+
+.. note::
+
+    Python YQL validates placeholders to check that the correct number of substitutions are passed into the execute function.
+
+.. sourcecode:: python
+
+    >>> import yql
+    >>> y = yql.Public()
+    >>> query = 'select * from flickr.photos.search where text=@text limit 3';
+    >>> y.execute(query, {"text": "panda"})
+
+
+Using INSERT, UPDATE and DELETE
+-------------------------------
+
+As of version (0.4) python-yql supports INSERT, UPDATE and DELETE queries.
+
+Here's an example of an INSERT using the bit.ly table:
+
+.. sourcecode:: python
+
+        query = """USE 'http://yqlblog.net/samples/bitly.shorten.xml'; 
+                   insert into bitly.shorten(login, apiKey, longUrl) 
+                   values('%s','%s','http://yahoo.com')""" % (
+                                            BITLY_USER, BITLY_API_KEY)
+        y = yql.Public()
+        res = y.execute(query)
+

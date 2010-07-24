@@ -46,7 +46,7 @@ REQUEST_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_request_token'
 ACCESS_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_token'
 AUTHORIZATION_URL = 'https://api.login.yahoo.com/oauth/v2/request_auth'
 
-PUBLIC_URI = "http://query.yahooapis.com/v1/public/yql"
+PUBLIC_URI = "https://query.yahooapis.com/v1/public/yql"
 PRIVATE_URI = "http://query.yahooapis.com/v1/yql"
 
 
@@ -210,7 +210,15 @@ class Public(object):
         """Execute YQL query"""    
         url = self.get_uri(query, params, **kwargs)
         http_method = get_http_method(query)
-        resp, content = self.http.request(url, http_method)
+
+        if http_method in ["DELETE", "PUT", "POST"]:
+            data = {"q": query}
+            data = urlencode(data)
+            resp, content = self.http.request(
+                            url, http_method, body=data)
+        else:
+            resp, content = self.http.request(url, http_method)
+
         if resp.get('status') == '200':
             return YQLObj(json.loads(content))
         else:
@@ -239,27 +247,30 @@ class TwoLegged(Public):
         return params 
    
   
-    def __two_legged_request(self, resource_url, parameters=None):
+    def __two_legged_request(self, resource_url, parameters=None, method=None):
         """Sign a request for two-legged authentication"""
         
         params = self.get_base_params()
         if parameters:
             params.update(parameters)
 
+        if not method:
+            method = "GET"
+
         consumer = oauth.Consumer(self.api_key, self.secret)
-        request = oauth.Request(method="GET", url=resource_url, 
+        request = oauth.Request(method=method, url=resource_url, 
                                                         parameters=params)
         request.sign_request(self.hmac_sha1_signature, consumer, None)
-        
         return request
     
     
     def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
         query_params = self.get_query_params(query, params, **kwargs)
-        url = '%s?%s' % (self.uri, urlencode(query_params))
-        request = self.__two_legged_request(url, parameters=query_params)
-        
+    
+        http_method = get_http_method(query)
+        request = self.__two_legged_request(self.uri, 
+                       parameters=query_params, method=http_method)
         return "%s?%s" % (self.uri, request.to_postdata()) 
 
 
@@ -323,7 +334,7 @@ class ThreeLegged(TwoLegged):
         request = oauth.Request(parameters=params)
         url = REQUEST_TOKEN_URL
         resp, content = client.request(url, "POST", request.to_postdata()) 
-        
+
         if resp.get('status') == '200':
             token = oauth.Token.from_string(content)
             data = dict(parse_qsl(content))
@@ -358,7 +369,9 @@ class ThreeLegged(TwoLegged):
 
         oauth_request = oauth.Request.from_consumer_and_token(
                                self.consumer, token=token, 
-                               http_url=ACCESS_TOKEN_URL, parameters=params)
+                               http_url=ACCESS_TOKEN_URL, 
+                               http_method="POST",
+                               parameters=params)
 
         oauth_request.sign_request(
                 self.plaintext_signature, self.consumer, token)
@@ -406,7 +419,9 @@ class ThreeLegged(TwoLegged):
 
         oauth_request = oauth.Request.from_consumer_and_token(
                                self.consumer, token=token,
-                               http_url=ACCESS_TOKEN_URL, parameters=params)
+                               http_url=ACCESS_TOKEN_URL, 
+                               http_method="POST",
+                               parameters=params)
 
         oauth_request.sign_request(
                 self.plaintext_signature, self.consumer, token)
@@ -422,40 +437,30 @@ class ThreeLegged(TwoLegged):
         else:
             raise YQLError, (resp, content)
 
-
-    def get_uri(self, query, params=None, token=None, **kwargs):
+    def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
         query_params = self.get_query_params(query, params, **kwargs)
-        query_string = urlencode(query_params)
+
+        token = kwargs.get("token")
+        
+        if hasattr(token, "yahoo_guid"):
+            query_params["oauth_yahoo_guid"] = getattr(token, "yahoo_guid")
 
         if not token:
             raise ValueError, "Without a token three-legged-auth cannot be"\
                                                               " carried out"
-         
-        url = '%s?%s' % (self.uri, query_string)
 
+        http_method = get_http_method(query)
         oauth_request = oauth.Request.from_consumer_and_token(
-                                        self.consumer, http_url=url, 
-                                        token=token, parameters=query_params)
+                                        self.consumer, http_url=self.uri, 
+                                        token=token, parameters=query_params,
+                                        http_method=http_method)
 
         # Sign request 
         oauth_request.sign_request(
                             self.hmac_sha1_signature, self.consumer, token)
 
         return "%s?%s" % (self.uri,  oauth_request.to_postdata())
-            
-            
-    def execute(self, query, params=None, token=None, **kwargs):
-        """Execute YQL Note in this case the token is required"""    
-       
-        uri = self.get_uri(query, params, token,  **kwargs)
-        http_method = get_http_method(query)
-        resp, content = self.http.request(uri, http_method)
-
-        if resp.get('status') == '200':
-            return YQLObj(json.loads(content))
-        else:
-            raise YQLError, (resp, content)
 
 
 class YahooToken(oauth.Token):
@@ -523,10 +528,9 @@ class YahooToken(oauth.Token):
 
         if hasattr(self, 'timestamp'):
             data['token_creation_timestamp'] = self.timestamp
- 
+
         if self.callback_confirmed is not None:
             data['oauth_callback_confirmed'] = self.callback_confirmed
         
         return urlencode(data)
-
 

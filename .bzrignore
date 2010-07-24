@@ -10,3 +10,4 @@ setuptools-0.6c11-py2.5.egg
 setuptools-0.6c11-py2.6.egg
 cache
 cache
+secrets.py
