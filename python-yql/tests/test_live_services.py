@@ -60,6 +60,8 @@ class LiveTestCase(TestCase):
     def test_update_social_status(self):
         """Updates status"""
         y = yql.ThreeLegged(YQL_API_KEY, YQL_SHARED_SECRET)
+        assert y.uri == "http://query.yahooapis.com/v1/yql"
+
         query = """UPDATE social.profile.status SET status='Using YQL. Update' WHERE guid=me""" 
 
         path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../cache'))
@@ -80,8 +82,13 @@ class LiveTestCase(TestCase):
             token = y.check_token(stored_token)
             if token != stored_token:
                 token_store.set('foo', token)
-
-        res = y.execute(query, token=token)
+        from yql import YQLError
+        try:
+            res = y.execute(query, token=token)
+        except YQLError, e:
+            res = None
+            print e.url
+            
         assert res.rows == "ok"
         new_query = """select message from social.profile.status where guid=me""" 
         res = y.execute(new_query, token=token)

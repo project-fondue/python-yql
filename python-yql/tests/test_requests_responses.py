@@ -16,7 +16,7 @@ except ImportError:
 
 HTTP_SRC_DIR = os.path.join(os.path.dirname(__file__), "http_src/")
 
-class MyHttpReplacement:
+class MyHttpReplacement(object):
     """Build a stand-in for httplib2.Http that takes its
     response headers and bodies from files on disk
 
@@ -43,8 +43,8 @@ class MyHttpReplacement:
             response = message_from_file(f)
             f.close()
             body = response.get_payload()
-            headers = httplib2.Response(response)
-            return (headers, body)
+            response_headers = httplib2.Response(response)
+            return (response_headers, body)
         else:
             return (httplib2.Response({"status": "404"}), "")
 
@@ -197,8 +197,10 @@ def test_raises_for_three_legged_with_no_token():
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_request_for_three_legged():
     query = 'SELECT * from foo'
-    y = TestThreeLegged('test-api-key', 'test-secret', httplib2_inst=httplib2.Http())
-    token = oauth.Token.from_string('oauth_token=foo&oauth_token_secret=bar')
+    y = TestThreeLegged('test-api-key', 'test-secret', 
+                                        httplib2_inst=httplib2.Http())
+    token = oauth.Token.from_string(
+                        'oauth_token=foo&oauth_token_secret=bar')
     signed_url = y.execute(query, token=token)
     qs  = dict(parse_qsl(signed_url.split('?')[1]))
     assert qs['q'] == query
@@ -222,7 +224,8 @@ def test_three_legged_execution_raises_value_error_with_invalid_uri():
  
 @with_setup(set_up_http_from_file, tear_down_http_from_file)
 def test_get_access_token_request3():
-    y = yql.ThreeLegged('test','test-does-not-exist', httplib2_inst=httplib2.Http())
+    y = yql.ThreeLegged('test', 'test-does-not-exist', 
+                                httplib2_inst=httplib2.Http())
     new_token = yql.YahooToken('test', 'test2')
     new_token.session_handle = 'sess_handle_test'
     token = y.refresh_token(token=new_token)

@@ -46,9 +46,10 @@ REQUEST_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_request_token'
 ACCESS_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_token'
 AUTHORIZATION_URL = 'https://api.login.yahoo.com/oauth/v2/request_auth'
 
-PUBLIC_URI = "https://query.yahooapis.com/v1/public/yql"
-PRIVATE_URI = "http://query.yahooapis.com/v1/yql"
-
+PUBLIC_ENDPOINT = "query.yahooapis.com/v1/public/yql"
+PRIVATE_ENDPOINT = "query.yahooapis.com/v1/yql"
+HTTP_SCHEME = "http:"
+HTTPS_SCHEME = "https:"
 
 class YQLObj(object):
     """A YQLObject is the object created as the result of a YQL query"""
@@ -129,15 +130,37 @@ class YQLObj(object):
 
 class YQLError(Exception):
     """Default Error"""
-    pass
+
+    def __init__(self, resp, content, url=None, query=None):
+        self.response = resp
+        self.content = content
+        self.url = url
+        self.query = query
+
+    def __str__(self):
+        """Return the error message.
+        
+        Attempt to parse the json if it fails
+        simply return the content attribute instead.
+
+        """
+        try:
+            content = json.loads(self.content)
+        except:
+            content = {}
+
+        if content and content.get("error") and content["error"].get(
+                                                        "description"):
+            return repr(content['error']['description'])
+        else:
+            return repr(self.content)
 
 
 class Public(object):
     """Class for making public YQL queries"""
 
     def __init__(self, api_key=None, shared_secret=None, httplib2_inst=None):
-        """
-        Init the base class.
+        """Init the base class.
         
         Optionally you can pass in an httplib2 instance which allows you 
         to set-up the instance in a different way for your own uses. 
@@ -148,9 +171,43 @@ class Public(object):
         self.api_key = api_key
         self.secret = shared_secret
         self.http = httplib2_inst or Http()
-        self.uri = PUBLIC_URI
+        self.__scheme = HTTPS_SCHEME
+        self.__endpoint = PUBLIC_ENDPOINT
+        self.uri = self.get_endpoint_uri() 
+        
+    def get_endpoint_uri(self):
+        """Get uri for requests"""
+        return "%s//%s" % (self.scheme, self.endpoint)
 
-    
+    @property
+    def scheme(self):
+        """Gets the uri for requests"""
+        return self.__scheme
+
+    @scheme.setter
+    def scheme(self, value):
+        """Sets the scheme and updates the uri"""
+        if value in (HTTP_SCHEME, HTTPS_SCHEME):
+            self.__scheme = value
+            self.uri = self.get_endpoint_uri()
+        else:
+            raise ValueError, "Invalid Scheme: %s" % value
+
+    @property
+    def endpoint(self):
+        """Gets the endpoint for requests"""
+        return self.__endpoint
+
+    @endpoint.setter
+    def endpoint(self, value):
+        """Sets the endpoint and updates the uri"""
+        if value in (PRIVATE_ENDPOINT, PUBLIC_ENDPOINT):
+            self.__endpoint = value
+            self.uri = self.get_endpoint_uri()
+        else:
+            raise ValueError, "Invalid endpoint: %s" % value
+
+
     def get_query_params(self, query, params, **kwargs):
         """Get the query params and validate placeholders"""
         query_params = {}
@@ -231,7 +288,8 @@ class TwoLegged(Public):
     def __init__(self, api_key, shared_secret, httplib2_inst=None):
         """Override init to ensure required args"""
         super(TwoLegged, self).__init__(api_key, shared_secret, httplib2_inst)
-        self.uri = PRIVATE_URI
+        self.endpoint = PUBLIC_ENDPOINT
+        self.scheme = HTTP_SCHEME
         self.hmac_sha1_signature = oauth.SignatureMethod_HMAC_SHA1()
         self.plaintext_signature = oauth.SignatureMethod_PLAINTEXT()
 
@@ -315,8 +373,9 @@ class ThreeLegged(TwoLegged):
         super(ThreeLegged, self).__init__(
                                     api_key, shared_secret, httplib2_inst)
 
+        self.scheme = HTTP_SCHEME
+        self.endpoint = PRIVATE_ENDPOINT
         self.consumer = oauth.Consumer(self.api_key, self.secret)
-
 
     def get_token_and_auth_url(self, callback_url=None):
         """First step is to get the token and then send the request that 
@@ -340,7 +399,7 @@ class ThreeLegged(TwoLegged):
             data = dict(parse_qsl(content))
             return token, data['xoauth_request_auth_url'] 
         else:
-            raise YQLError, (resp, content)
+            raise YQLError, (resp, content, url)
 
 
     def get_access_token(self, token, verifier):
@@ -385,7 +444,7 @@ class ThreeLegged(TwoLegged):
             access_token.timestamp = oauth_request['oauth_timestamp']
             return access_token
         else:
-            raise YQLError, (resp, content)
+            raise YQLError, (resp, content, url)
 
 
     def check_token(self, token):
@@ -435,7 +494,7 @@ class ThreeLegged(TwoLegged):
             access_token.timestamp = oauth_request['oauth_timestamp']
             return access_token
         else:
-            raise YQLError, (resp, content)
+            raise YQLError, (resp, content, url)
 
     def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
