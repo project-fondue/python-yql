@@ -3,9 +3,8 @@
 METHOD_MAP = (
     ("insert", "POST"),
     ("update", "PUT"),
-    ("delete", "DELETE"),
+    ("delete", "POST"),
 )
-
 
 def get_http_method(query):
     """Work out if this should be GET, POST, PUT or DELETE"""

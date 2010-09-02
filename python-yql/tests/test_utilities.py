@@ -9,9 +9,9 @@ TEST_DATA = (
     ("INSERT into", "POST"),
     ("INSERT into", "POST"),
     ("update foo", "PUT"),
-    ("DELETE from", "DELETE"),
-    ("delete from", "DELETE"),
-    ("delete from", "DELETE"),
+    ("DELETE from", "POST"),
+    ("delete from", "POST"),
+    ("delete from", "POST"),
     ("""INSERT INTO yql.queries.query (name, query) 
         VALUES ("weather", "SELECT * FROM weather.forecast 
             WHERE location=90210")""", "POST"),

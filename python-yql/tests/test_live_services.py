@@ -17,7 +17,7 @@ import os
 import yql
 from yql.storage import FileTokenStore
 from nose.plugins.skip import SkipTest
-
+from time import time
 
 from unittest import TestCase
 
@@ -60,9 +60,11 @@ class LiveTestCase(TestCase):
     def test_update_social_status(self):
         """Updates status"""
         y = yql.ThreeLegged(YQL_API_KEY, YQL_SHARED_SECRET)
-        assert y.uri == "http://query.yahooapis.com/v1/yql"
 
-        query = """UPDATE social.profile.status SET status='Using YQL. Update' WHERE guid=me""" 
+        timestamp = time()
+        query = """UPDATE social.profile.status 
+                   SET status='Using YQL. %s Update' 
+                   WHERE guid=me"""  % timestamp
 
         path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../cache'))
         token_store = FileTokenStore(path, secret='gsfdsfdsfdsfs')
@@ -82,17 +84,53 @@ class LiveTestCase(TestCase):
             token = y.check_token(stored_token)
             if token != stored_token:
                 token_store.set('foo', token)
-        from yql import YQLError
-        try:
-            res = y.execute(query, token=token)
-        except YQLError, e:
-            res = None
-            print e.url
-            
+
+        res = y.execute(query, token=token)
+
+        #assert y.uri == "http://query.yahooapis.com/v1/yql"
         assert res.rows == "ok"
         new_query = """select message from social.profile.status where guid=me""" 
         res = y.execute(new_query, token=token)
-        assert res.rows.get("message") == "Using YQL. Update"
+        assert res.rows.get("message") == "Using YQL. %s Update" % timestamp
+
+    def test_update_meme_status(self):
+        """Updates status"""
+        y = yql.ThreeLegged(YQL_API_KEY, YQL_SHARED_SECRET)
+        query = 'INSERT INTO meme.user.posts (type, content) VALUES("text", "test with pythonyql")'
+
+        path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../cache'))
+        token_store = FileTokenStore(path, secret='fjdsfjllds')
+        
+        store_name = "meme" 
+        stored_token = token_store.get(store_name)
+
+        if not stored_token:
+            # Do the dance
+            request_token, auth_url = y.get_token_and_auth_url()
+            print "Visit url %s and get a verifier string" % auth_url
+            verifier = raw_input("Enter the code: ")
+            token = y.get_access_token(request_token, verifier)
+            token_store.set(store_name, token)
+        else:
+            # Check access_token is within 1hour-old and if not refresh it
+            # and stash it
+            token = y.check_token(stored_token)
+            if token != stored_token:
+                token_store.set(store_name, token)
+
+        # post a meme
+        res = y.execute(query, token=token)
+        assert y.uri == "http://query.yahooapis.com/v1/yql"
+        assert res.rows.get("message") == "ok"
+
+        pubid = None
+        if res.rows.get("post") and res.rows["post"].get("pubid"):
+            pubid = res.rows["post"]["pubid"]
+        
+        # Delete the post we've just created
+        query = 'DELETE FROM meme.user.posts WHERE pubid=@pubid'
+        res2 = y.execute(query, token=token, params={"pubid": pubid})
+        assert res2.rows.get("message") == "ok"
 
     def test_check_env_var(self):
         """Testing env variable"""
