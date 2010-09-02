@@ -32,7 +32,7 @@ setup(name='yql',
             and ['httplib2', 'simplejson', 'oauth2'] \
             or ['httplib2', 'oauth2'],
     tests_require = ['nosetests', 'coverage'],
-    test_suite="tests",
+    test_suite="yql.tests",
     entry_points = """\
     """
 )
