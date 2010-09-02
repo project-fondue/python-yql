@@ -59,7 +59,7 @@ LOG_LEVELS = {'debug': logging.DEBUG,
               'warning': logging.WARNING,
               'error': logging.ERROR,
               'critical': logging.CRITICAL}
-LOG_LEVEL = 'debug'
+LOG_LEVEL = 'error'
 LOG_FILENAME = os.path.join(LOG_DIRECTORY, "python-yql.log")
 
 log_level = LOG_LEVELS.get(LOG_LEVEL)
