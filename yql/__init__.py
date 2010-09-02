@@ -53,22 +53,34 @@ PRIVATE_ENDPOINT = "query.yahooapis.com/v1/yql"
 HTTP_SCHEME = "http:"
 HTTPS_SCHEME = "https:"
 
-LOG_DIRECTORY = os.path.join(os.path.dirname(__file__), "../logs")
+LOGGING = os.environ.get("YQL_LOGGING", False)
+LOG_DIRECTORY_DEFAULT = os.path.join(os.path.dirname(__file__), "../logs")
+LOG_DIRECTORY = os.environ.get("YQL_LOG_DIR", LOG_DIRECTORY_DEFAULT)
 LOG_LEVELS = {'debug': logging.DEBUG,
               'info': logging.INFO,
               'warning': logging.WARNING,
               'error': logging.ERROR,
               'critical': logging.CRITICAL}
-LOG_LEVEL = 'error'
+
+LOG_LEVEL = os.environ.get("YQL_LOGGING_LEVEL", 'error')
 LOG_FILENAME = os.path.join(LOG_DIRECTORY, "python-yql.log")
 
 log_level = LOG_LEVELS.get(LOG_LEVEL)
 yql_logger = logging.getLogger("python-yql")
 yql_logger.setLevel(LOG_LEVELS.get(LOG_LEVEL))
-log_handler = logging.handlers.RotatingFileHandler(
-      LOG_FILENAME, maxBytes=1024*1024, backupCount=5)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-log_handler.setFormatter(formatter)
+
+class NullHandler(logging.Handler):
+    def emit(self, record):
+        pass
+
+if LOGGING:
+    log_handler = logging.handlers.RotatingFileHandler(
+          LOG_FILENAME, maxBytes=1024*1024, backupCount=5)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    log_handler.setFormatter(formatter)
+else:
+    log_handler = NullHandler()
+
 yql_logger.addHandler(log_handler)
  
 class YQLObj(object):
