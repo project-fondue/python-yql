@@ -1,0 +1,4 @@
+include distribute_setup.py
+include README AUTHORS LICENSE
+recursive-include yql *.py
+
