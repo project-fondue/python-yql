@@ -6,9 +6,7 @@ use_setuptools()
 
 from setuptools import setup, find_packages
 
-here = os.path.abspath(os.path.dirname(__file__))
-
-README = open(os.path.join(here, '../README.rst')).read()
+README = open('README.rst').read()
 VERSION = 0.5
 
 setup(name='yql',
@@ -30,7 +28,9 @@ setup(name='yql',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires = sys.version_info < (2,6) and ['httplib2', 'simplejson'] or ['httplib2'],
+    install_requires = sys.version_info < (2,6) \
+            and ['httplib2', 'simplejson', 'oauth2'] \
+            or ['httplib2', 'oauth2'],
     tests_require = ['nosetests', 'coverage'],
     test_suite="tests",
     entry_points = """\
