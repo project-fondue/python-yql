@@ -316,12 +316,12 @@ class Public(object):
             headers = {"Content-Type": "application/json"}
             resp, content = self.http.request(
                             url, http_method, headers=headers, body=data)
-            yql_logger.debug("execute_body: %s", data)
+            yql_logger.debug("body: %s", data)
         else:
             resp, content = self.http.request(url, http_method)
 
-        yql_logger.debug("execute_http_method: %s", http_method)
-        yql_logger.debug("execute_url: %s", url)
+        yql_logger.debug("http_method: %s", http_method)
+        yql_logger.debug("url: %s", url)
 
         if resp.get('status') == '200':
             return YQLObj(json.loads(content))
@@ -358,8 +358,8 @@ class TwoLegged(Public):
         if parameters:
             params.update(parameters)
 
-        yql_logger.debug("two_legged_params: %s", params)
-        yql_logger.debug("two_legged_resource_url: %s", resource_url)
+        yql_logger.debug("params: %s", params)
+        yql_logger.debug("resource_url: %s", resource_url)
         if not method:
             method = "GET"
 
@@ -378,7 +378,7 @@ class TwoLegged(Public):
         request = self.__two_legged_request(self.uri, 
                        parameters=query_params, method=http_method)
         uri = "%s?%s" % (self.uri, request.to_postdata()) 
-        yql_logger.debug("get_uri: %s", params)
+        yql_logger.debug("uri: %s", params)
         return uri
 
 class ThreeLegged(TwoLegged):
@@ -568,21 +568,21 @@ class ThreeLegged(TwoLegged):
             raise ValueError, "Without a token three-legged-auth cannot be"\
                                                               " carried out"
 
-        yql_logger.debug("three_legged_query_params: %s", query_params)
+        yql_logger.debug("query_params: %s", query_params)
         http_method = get_http_method(query)
         oauth_request = oauth.Request.from_consumer_and_token(
                                         self.consumer, http_url=self.uri, 
                                         token=token, parameters=query_params,
                                         http_method=http_method)
 
-        yql_logger.debug("three_legged_oauth_request: %s", oauth_request)
+        yql_logger.debug("oauth_request: %s", oauth_request)
         # Sign request 
         oauth_request.sign_request(
                             self.hmac_sha1_signature, self.consumer, token)
         
-        yql_logger.debug("three_legged_oauth_signed_request: %s", oauth_request)
+        yql_logger.debug("oauth_signed_request: %s", oauth_request)
         uri = "%s?%s" % (self.uri,  oauth_request.to_postdata())
-        yql_logger.debug("three_legged_uri: %s", oauth_request)
+        yql_logger.debug("uri: %s", oauth_request)
         return uri
 
 
