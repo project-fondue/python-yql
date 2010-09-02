@@ -39,7 +39,7 @@ except ImportError: # pragma: no cover
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 
 __author__ = 'Stuart Colville'
-__version__ = '0.4'
+__version__ = '0.5'
 __all__ = ['Public', 'TwoLegged', 'ThreeLegged']
 
 QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
