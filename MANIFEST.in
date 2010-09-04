@@ -1,4 +1,4 @@
 include distribute_setup.py
-include README AUTHORS LICENSE
+include README AUTHORS LICENSE CHANGELOG
 recursive-include yql *.py
 
