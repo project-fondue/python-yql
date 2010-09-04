@@ -57,6 +57,12 @@ For the most part it will make sense to use the :attr:`YQLObj.rows` property to 
     Panda Lin Hui
     >>> 
 
+
+.. note::
+
+   In version 0.6 this was changed so that if only one row is returned it's still a list so that iterating over the rows is more robust. Prior to version 0.6 results.rows would contain the content of the data.
+
+
 If at any point you want to access the raw data you can use the :attr:`YQLObj.raw` property to access the full dataset as converted from JSON.
 
 Public API Calls
@@ -219,6 +225,9 @@ This example uses the optional query placeholders which are strings prefixed wit
     >>> y.execute(query, {"text": "panda"})
 
 
+.. note::
+    Issues have been noted using placeholders within SET queries. This needs further investigation but it appears to be a bug outside of the python-yql library.
+
 Using INSERT, UPDATE and DELETE
 -------------------------------
 
@@ -235,3 +244,13 @@ Here's an example of an INSERT using the bit.ly table:
         y = yql.Public()
         res = y.execute(query)
 
+Logging for debugging purposes
+-------------------------------
+
+As of version 0.5 logging has been made available. It's off by default, however it is possible to control logging and turn it on using environment variables.
+
+* YQL_LOGGING - Set to a value e.g: 1 to turn on logging.
+* YQL_LOG_DIR - the directory that logs are written to.
+* YQL_LOGGING_LEVEL - Should be one of 'debug', 'info', 'warning', 'error', 'critical'.
+
+For debugging setting the level to "debug" will provide the most insight into what's happening.

@@ -13,6 +13,7 @@ If the secrets file isn't present the tests are skipped
 
 """
 import os
+import sys
 
 import yql
 from yql.storage import FileTokenStore
@@ -21,8 +22,14 @@ from time import time
 
 from unittest import TestCase
 
+SECRETS_DIR = os.path.join(os.path.dirname(__file__), "../../../secrets")
+CACHE_DIR = os.path.abspath(os.path.join(SECRETS_DIR, "cache"))
+
 try:
-    from yql.secrets import *
+    if SECRETS_DIR not in sys.path:
+        sys.path.append(SECRETS_DIR)
+
+    from secrets import *
 except ImportError:
     raise SkipTest
 
@@ -38,7 +45,7 @@ class LiveTestCase(TestCase):
                                             BITLY_USER, BITLY_API_KEY)
         y = yql.Public()
         res = y.execute(query)
-        assert res.rows["results"]["nodeKeyVal"]["shortUrl"] == "http://yhoo.it/9PPTOr"
+        assert res.rows[0]["results"]["nodeKeyVal"]["shortUrl"] == "http://yhoo.it/9PPTOr"
 
     def test_public_request(self):
         """Test public two-legged request to flickr"""
@@ -66,9 +73,7 @@ class LiveTestCase(TestCase):
                    SET status='Using YQL. %s Update' 
                    WHERE guid=me"""  % timestamp
 
-        path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../cache'))
-        token_store = FileTokenStore(path, secret='gsfdsfdsfdsfs')
-
+        token_store = FileTokenStore(CACHE_DIR, secret='gsfdsfdsfdsfs')
         stored_token = token_store.get('foo')
 
         if not stored_token:
@@ -86,24 +91,19 @@ class LiveTestCase(TestCase):
                 token_store.set('foo', token)
 
         res = y.execute(query, token=token)
-
-        #assert y.uri == "http://query.yahooapis.com/v1/yql"
-        assert res.rows == "ok"
+        assert res.rows[0] == "ok"
         new_query = """select message from social.profile.status where guid=me""" 
         res = y.execute(new_query, token=token)
-        assert res.rows.get("message") == "Using YQL. %s Update" % timestamp
+        assert res.rows[0].get("message") == "Using YQL. %s Update" % timestamp
 
     def test_update_meme_status(self):
         """Updates status"""
         y = yql.ThreeLegged(YQL_API_KEY, YQL_SHARED_SECRET)
         query = 'INSERT INTO meme.user.posts (type, content) VALUES("text", "test with pythonyql")'
-
-        path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../cache'))
-        token_store = FileTokenStore(path, secret='fjdsfjllds')
+        token_store = FileTokenStore(CACHE_DIR, secret='fjdsfjllds')
         
         store_name = "meme" 
         stored_token = token_store.get(store_name)
-
         if not stored_token:
             # Do the dance
             request_token, auth_url = y.get_token_and_auth_url()
@@ -121,16 +121,16 @@ class LiveTestCase(TestCase):
         # post a meme
         res = y.execute(query, token=token)
         assert y.uri == "http://query.yahooapis.com/v1/yql"
-        assert res.rows.get("message") == "ok"
+        assert res.rows[0].get("message") == "ok"
 
         pubid = None
-        if res.rows.get("post") and res.rows["post"].get("pubid"):
-            pubid = res.rows["post"]["pubid"]
+        if res.rows[0].get("post") and res.rows[0]["post"].get("pubid"):
+            pubid = res.rows[0]["post"]["pubid"]
         
         # Delete the post we've just created
         query = 'DELETE FROM meme.user.posts WHERE pubid=@pubid'
         res2 = y.execute(query, token=token, params={"pubid": pubid})
-        assert res2.rows.get("message") == "ok"
+        assert res2.rows[0].get("message") == "ok"
 
     def test_check_env_var(self):
         """Testing env variable"""
@@ -147,6 +147,6 @@ class LiveTestCase(TestCase):
                    AND xpath="//input[contains(@name, 'q')]" 
                    LIMIT 10"""
         res = y.execute(query)
-        assert res.rows.get("title") == "Google Search"
+        assert res.rows[0].get("title") == "Google Search"
 
 

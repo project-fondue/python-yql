@@ -20,6 +20,12 @@ QuickStart
 
 .. sourcecode:: sh
 
+    sudo pip install yql
+
+Or alternatively:
+
+.. sourcecode:: sh
+
     sudo easy_install yql
 
 The following example shows a simple query using the public endpoint.
@@ -52,6 +58,7 @@ Contents
     code
     license
     authors
+    changelog
 
 Indices and tables
 ==================

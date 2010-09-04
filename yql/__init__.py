@@ -39,7 +39,7 @@ except ImportError: # pragma: no cover
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 
 __author__ = 'Stuart Colville'
-__version__ = '0.5.2'
+__version__ = '0.6'
 __all__ = ['Public', 'TwoLegged', 'ThreeLegged']
 
 QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
@@ -62,7 +62,7 @@ LOG_LEVELS = {'debug': logging.DEBUG,
               'error': logging.ERROR,
               'critical': logging.CRITICAL}
 
-LOG_LEVEL = os.environ.get("YQL_LOGGING_LEVEL", 'error')
+LOG_LEVEL = os.environ.get("YQL_LOGGING_LEVEL", 'debug')
 LOG_FILENAME = os.path.join(LOG_DIRECTORY, "python-yql.log")
 
 log_level = LOG_LEVELS.get(LOG_LEVEL)
@@ -116,18 +116,25 @@ class YQLObj(object):
 
     @property
     def rows(self):
-        """Get the list of rows 
+        """Get a list of rows returned by the query.
         
         Results is a dict with one key but that key changes depending on the results
-        This provides a way of getting at the rows list in an arbitrary way
+        This provides a way of getting at the rows list in an arbitrary way.
+
+        Added in version: 0.6 fixes results with 1 item so that they are still 
+        returned within a list.
 
         """
+        result = []
         if self.results:
             vals = self.results.values()
             if len(vals) == 1:
-                return self.results.values()[0]
+                result = self.results.values()[0]
         
-        return []
+        if self.count == 1 and result:
+            result = [result]
+
+        return result
 
     @property
     def query(self):
@@ -583,7 +590,7 @@ class ThreeLegged(TwoLegged):
         yql_logger.debug("oauth_signed_request: %s", oauth_request)
         uri = "%s?%s" % (self.uri,  oauth_request.to_postdata())
         yql_logger.debug("uri: %s", oauth_request)
-        return uri
+        return uri.replace('+', '%20').replace('%7E', '~')
 
 
 class YahooToken(oauth.Token):
