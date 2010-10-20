@@ -39,7 +39,7 @@ except ImportError: # pragma: no cover
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 
 __author__ = 'Stuart Colville'
-__version__ = '0.6'
+__version__ = '0.6.1'
 __all__ = ['Public', 'TwoLegged', 'ThreeLegged']
 
 QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
@@ -221,13 +221,11 @@ class Public(object):
         """Get uri for requests"""
         return "%s//%s" % (self.scheme, self.endpoint)
 
-    @property
-    def scheme(self):
+    def get_scheme(self):
         """Gets the uri for requests"""
         return self.__scheme
 
-    @scheme.setter
-    def scheme(self, value):
+    def set_scheme(self, value):
         """Sets the scheme and updates the uri"""
         if value in (HTTP_SCHEME, HTTPS_SCHEME):
             self.__scheme = value
@@ -235,13 +233,11 @@ class Public(object):
         else:
             raise ValueError, "Invalid Scheme: %s" % value
 
-    @property
-    def endpoint(self):
+    def get_endpoint(self):
         """Gets the endpoint for requests"""
         return self.__endpoint
 
-    @endpoint.setter
-    def endpoint(self, value):
+    def set_endpoint(self, value):
         """Sets the endpoint and updates the uri"""
         if value in (PRIVATE_ENDPOINT, PUBLIC_ENDPOINT):
             self.__endpoint = value
@@ -282,7 +278,6 @@ class Public(object):
             query_params['env'] = env
 
         return query_params
-
 
     @staticmethod
     def get_placeholder_keys(query):
@@ -334,6 +329,9 @@ class Public(object):
             return YQLObj(json.loads(content))
         else:
             raise YQLError, (resp, content)
+
+    scheme = property(get_scheme, set_scheme)
+    endpoint = property(get_endpoint, set_endpoint)
 
 
 class TwoLegged(Public):
