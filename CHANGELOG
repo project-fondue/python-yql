@@ -1,6 +1,9 @@
+* 0.6.1
+    * Fix `LP:663232 <https://bugs.launchpad.net/bugs/663232>`_ remove setter for Python2.5 compatibility.
 * 0.6 
     * Added changelog.
     * Documentation updates.
+    * Fixes for compatibility with latest oauth
 * 0.5.2
     * Fix packaging issues LP: 60882, 627467
     * Small documentation updates
@@ -9,7 +12,7 @@
     * Fix packaging issues
     * Removed oauth2 from being bundled
 * 0.5
-    * Fix for meme table which returns 502 if the body isn't sent as JSON `LP:629064 <https://bugs.edge.launchpad.net/python-yql/+bug/629064>`_
+    * Fix for meme table which returns 502 if the body isn't sent as JSON `LP:629064 <https://bugs.launchpad.net/bugs/629064>`_
     * Fix deletions.
     * Added logging.
     * Scheme is now more easily configurable.
