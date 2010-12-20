@@ -62,6 +62,14 @@ For the most part it will make sense to use the :attr:`YQLObj.rows` property to 
 
    In version 0.6 this was changed so that if only one row is returned it's still a list so that iterating over the rows is more robust. Prior to version 0.6 results.rows would contain the content of the data.
 
+To access one result when you know you only have one result use the one() method:
+
+.. sourcecode:: python
+    >>> result = y.execute('select * from flickr.photos.search where text="panda" limit 1')
+    >>> result.one()
+    {u'isfamily': u'0', u'title': u'Panda can has fruit', u'farm': u'3', u'ispublic': u'1', u'server': u'2605', u'isfriend': u'0', u'secret': u'62ccb5d94e', u'owner': u'99045337@N00', u'id': u'4135649462'}
+
+If there's more than one result NotOneError will be raised.
 
 If at any point you want to access the raw data you can use the :attr:`YQLObj.raw` property to access the full dataset as converted from JSON.
 

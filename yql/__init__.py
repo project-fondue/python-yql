@@ -16,8 +16,6 @@ import re
 import sys
 import time
 import pprint
-import logging
-import logging.handlers
 
 try:
     import json
@@ -25,10 +23,11 @@ except ImportError: # pragma: no cover
     import simplejson as json
 
 from urlparse import urlparse
-from urllib import urlencode
+from urllib import urlencode, unquote
 from httplib2 import Http
 
-from yql.utils import get_http_method
+from yql.utils import get_http_method, clean_url, clean_query
+from yql.logger import get_logger
 import oauth2 as oauth
 
 try:
@@ -39,7 +38,7 @@ except ImportError: # pragma: no cover
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 
 __author__ = 'Stuart Colville'
-__version__ = '0.6.1'
+__version__ = '0.7'
 __all__ = ['Public', 'TwoLegged', 'ThreeLegged']
 
 QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
@@ -53,36 +52,8 @@ PRIVATE_ENDPOINT = "query.yahooapis.com/v1/yql"
 HTTP_SCHEME = "http:"
 HTTPS_SCHEME = "https:"
 
-LOGGING = os.environ.get("YQL_LOGGING", False)
-LOG_DIRECTORY_DEFAULT = os.path.join(os.path.dirname(__file__), "../logs")
-LOG_DIRECTORY = os.environ.get("YQL_LOG_DIR", LOG_DIRECTORY_DEFAULT)
-LOG_LEVELS = {'debug': logging.DEBUG,
-              'info': logging.INFO,
-              'warning': logging.WARNING,
-              'error': logging.ERROR,
-              'critical': logging.CRITICAL}
+yql_logger = get_logger()
 
-LOG_LEVEL = os.environ.get("YQL_LOGGING_LEVEL", 'debug')
-LOG_FILENAME = os.path.join(LOG_DIRECTORY, "python-yql.log")
-
-log_level = LOG_LEVELS.get(LOG_LEVEL)
-yql_logger = logging.getLogger("python-yql")
-yql_logger.setLevel(LOG_LEVELS.get(LOG_LEVEL))
-
-class NullHandler(logging.Handler):
-    def emit(self, record):
-        pass
-
-if LOGGING:
-    log_handler = logging.handlers.RotatingFileHandler(
-          LOG_FILENAME, maxBytes=1024*1024, backupCount=5)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    log_handler.setFormatter(formatter)
-else:
-    log_handler = NullHandler()
-
-yql_logger.addHandler(log_handler)
- 
 class YQLObj(object):
     """A YQLObject is the object created as the result of a YQL query"""
     
@@ -111,8 +82,16 @@ class YQLObj(object):
 
     @property
     def results(self):
-        """The query results dict"""
+        """The query results dict."""
         return self._raw.get('results')
+
+    def one(self):
+        """Return just one result directly."""
+        rows = self.rows
+        if len(rows) > 1:
+            raise NotOneError, "More than one result"
+        else:
+            return rows[0]
 
     @property
     def rows(self):
@@ -198,6 +177,17 @@ class YQLError(Exception):
             return repr(self.content)
 
 
+class NotOneError(Exception):
+    """Not One Error."""
+
+    def  __init__(self, message):
+        self.message = message
+
+    def  __str__(self):
+        """Return the error message"""
+        return repr(self.message)
+
+
 class Public(object):
     """Class for making public YQL queries"""
 
@@ -213,25 +203,13 @@ class Public(object):
         self.api_key = api_key
         self.secret = shared_secret
         self.http = httplib2_inst or Http()
-        self.__scheme = HTTPS_SCHEME
+        self.scheme = HTTPS_SCHEME
         self.__endpoint = PUBLIC_ENDPOINT
         self.uri = self.get_endpoint_uri() 
         
     def get_endpoint_uri(self):
-        """Get uri for requests"""
-        return "%s//%s" % (self.scheme, self.endpoint)
-
-    def get_scheme(self):
-        """Gets the uri for requests"""
-        return self.__scheme
-
-    def set_scheme(self, value):
-        """Sets the scheme and updates the uri"""
-        if value in (HTTP_SCHEME, HTTPS_SCHEME):
-            self.__scheme = value
-            self.uri = self.get_endpoint_uri()
-        else:
-            raise ValueError, "Invalid Scheme: %s" % value
+        """Get endpoint"""
+        return "http://%s" % self.endpoint
 
     def get_endpoint(self):
         """Gets the endpoint for requests"""
@@ -300,14 +278,19 @@ class Public(object):
         params = self.get_query_params(query, params, **kwargs)
         query_string = urlencode(params)
         uri =  '%s?%s' % (self.uri, query_string)
-        yql_logger.debug("uri: %s", uri)
+        uri = clean_url(uri)
         return uri
 
     def execute(self, query, params=None, **kwargs):
         """Execute YQL query"""    
+        query = clean_query(query)
         url = self.get_uri(query, params, **kwargs)
+        # Just in time change to https avoids 
+        # invalid oauth sigs
+        if self.scheme == HTTPS_SCHEME:
+            url = url.replace(HTTP_SCHEME, HTTPS_SCHEME)
+        yql_logger.debug("executed url: %s", url)
         http_method = get_http_method(query)
-
         if http_method in ["DELETE", "PUT", "POST"]:
             data = {"q": query}
 
@@ -321,16 +304,12 @@ class Public(object):
             yql_logger.debug("body: %s", data)
         else:
             resp, content = self.http.request(url, http_method)
-
         yql_logger.debug("http_method: %s", http_method)
-        yql_logger.debug("url: %s", url)
-
         if resp.get('status') == '200':
             return YQLObj(json.loads(content))
         else:
             raise YQLError, (resp, content)
 
-    scheme = property(get_scheme, set_scheme)
     endpoint = property(get_endpoint, set_endpoint)
 
 
@@ -341,7 +320,7 @@ class TwoLegged(Public):
         """Override init to ensure required args"""
         super(TwoLegged, self).__init__(api_key, shared_secret, httplib2_inst)
         self.endpoint = PUBLIC_ENDPOINT
-        self.scheme = HTTP_SCHEME
+        self.scheme = HTTPS_SCHEME
         self.hmac_sha1_signature = oauth.SignatureMethod_HMAC_SHA1()
         self.plaintext_signature = oauth.SignatureMethod_PLAINTEXT()
 
@@ -383,7 +362,7 @@ class TwoLegged(Public):
         request = self.__two_legged_request(self.uri, 
                        parameters=query_params, method=http_method)
         uri = "%s?%s" % (self.uri, request.to_postdata()) 
-        yql_logger.debug("uri: %s", params)
+        uri = clean_url(uri)
         return uri
 
 class ThreeLegged(TwoLegged):
@@ -490,7 +469,7 @@ class ThreeLegged(TwoLegged):
 
         yql_logger.debug("oauth_request: %s", oauth_request)
         oauth_request.sign_request(
-                self.plaintext_signature, self.consumer, token)
+                self.hmac_sha1_signature, self.consumer, token)
 
         url = oauth_request.to_url()
 
@@ -544,7 +523,7 @@ class ThreeLegged(TwoLegged):
 
         yql_logger.debug("oauth_request: %s", oauth_request)
         oauth_request.sign_request(
-                self.plaintext_signature, self.consumer, token)
+                self.hmac_sha1_signature, self.consumer, token)
 
         url = oauth_request.to_url()
         yql_logger.debug("oauth_url: %s", url)
@@ -579,7 +558,6 @@ class ThreeLegged(TwoLegged):
                                         self.consumer, http_url=self.uri, 
                                         token=token, parameters=query_params,
                                         http_method=http_method)
-
         yql_logger.debug("oauth_request: %s", oauth_request)
         # Sign request 
         oauth_request.sign_request(
@@ -587,7 +565,6 @@ class ThreeLegged(TwoLegged):
         
         yql_logger.debug("oauth_signed_request: %s", oauth_request)
         uri = "%s?%s" % (self.uri,  oauth_request.to_postdata())
-        yql_logger.debug("uri: %s", oauth_request)
         return uri.replace('+', '%20').replace('%7E', '~')
 
 
