@@ -1,3 +1,8 @@
+* 0.7
+    * Fix issues with https causing invalid oauth sigs in three-legged oauth.
+    * Move logging into it's own file
+    * Update live tests for bit.ly.
+    * Add one() method for single results.
 * 0.6.1
     * Fix `LP:663232 <https://bugs.launchpad.net/bugs/663232>`_ remove setter for Python2.5 compatibility.
 * 0.6 
