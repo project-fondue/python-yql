@@ -279,7 +279,6 @@ class Public(object):
         query_string = urlencode(params)
         uri =  '%s?%s' % (self.uri, query_string)
         uri = clean_url(uri)
-        yql_logger.debug("uri: %s", uri)
         return uri
 
     def execute(self, query, params=None, **kwargs):
@@ -362,10 +361,8 @@ class TwoLegged(Public):
         http_method = get_http_method(query)
         request = self.__two_legged_request(self.uri, 
                        parameters=query_params, method=http_method)
-        yql_logger.debug("self.uri: %s", self.uri)
         uri = "%s?%s" % (self.uri, request.to_postdata()) 
         uri = clean_url(uri)
-        yql_logger.debug("uri: %s", uri)
         return uri
 
 class ThreeLegged(TwoLegged):
@@ -568,7 +565,6 @@ class ThreeLegged(TwoLegged):
         
         yql_logger.debug("oauth_signed_request: %s", oauth_request)
         uri = "%s?%s" % (self.uri,  oauth_request.to_postdata())
-        yql_logger.debug("uri: %s", uri)
         return uri.replace('+', '%20').replace('%7E', '~')
 
 
