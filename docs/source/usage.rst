@@ -65,6 +65,7 @@ For the most part it will make sense to use the :attr:`YQLObj.rows` property to 
 To access one result when you know you only have one result use the one() method:
 
 .. sourcecode:: python
+
     >>> result = y.execute('select * from flickr.photos.search where text="panda" limit 1')
     >>> result.one()
     {u'isfamily': u'0', u'title': u'Panda can has fruit', u'farm': u'3', u'ispublic': u'1', u'server': u'2605', u'isfriend': u'0', u'secret': u'62ccb5d94e', u'owner': u'99045337@N00', u'id': u'4135649462'}
