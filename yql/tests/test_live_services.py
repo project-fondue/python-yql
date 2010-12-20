@@ -39,13 +39,13 @@ class LiveTestCase(TestCase):
     def test_write_bitly_url(self):
         """Test writing bit.ly url"""
 
-        query = """USE 'http://yqlblog.net/samples/bitly.shorten.xml'; 
-                   insert into bitly.shorten(login,apiKey,longUrl) 
-                   values('%s','%s','http://yahoo.com')""" % (
+        query = """USE 'http://www.datatables.org/bitly/bit.ly.shorten.xml'; 
+                   SELECT * from bit.ly.shorten where login='%s' and apiKey='%s' and 
+                   longUrl='http://yahoo.com'""" % (
                                             BITLY_USER, BITLY_API_KEY)
         y = yql.Public()
         res = y.execute(query)
-        assert res.rows[0]["results"]["nodeKeyVal"]["shortUrl"] == "http://yhoo.it/9PPTOr"
+        assert res.one()["data"]["url"] == "http://yhoo.it/gjnRfg"
 
     def test_public_request(self):
         """Test public two-legged request to flickr"""
