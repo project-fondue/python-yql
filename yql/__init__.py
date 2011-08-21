@@ -319,7 +319,7 @@ class TwoLegged(Public):
     def __init__(self, api_key, shared_secret, httplib2_inst=None):
         """Override init to ensure required args"""
         super(TwoLegged, self).__init__(api_key, shared_secret, httplib2_inst)
-        self.endpoint = PUBLIC_ENDPOINT
+        self.endpoint = PRIVATE_ENDPOINT
         self.scheme = HTTPS_SCHEME
         self.hmac_sha1_signature = oauth.SignatureMethod_HMAC_SHA1()
         self.plaintext_signature = oauth.SignatureMethod_PLAINTEXT()

@@ -43,9 +43,9 @@ class LiveTestCase(TestCase):
                    SELECT * from bit.ly.shorten where login='%s' and apiKey='%s' and 
                    longUrl='http://yahoo.com'""" % (
                                             BITLY_USER, BITLY_API_KEY)
-        y = yql.Public()
+        y = yql.TwoLegged(YQL_API_KEY, YQL_SHARED_SECRET)
         res = y.execute(query)
-        assert res.one()["data"]["url"] == "http://yhoo.it/gjnRfg"
+        assert res.one()["data"]["url"] == "http://yhoo.it/9PPTOr"
 
     def test_public_request(self):
         """Test public two-legged request to flickr"""
