@@ -1,3 +1,5 @@
+* 0.7.2
+    * Sync versioning in both lib + setup.py
 * 0.7.1
     * Set two-legged Oauth to use private endpoint by default `LP:830487 <https://bugs.launchpad.net/bugs/830487>`_
     * fix broken live test caused by a change a bit.ly's end.

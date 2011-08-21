@@ -7,7 +7,7 @@ use_setuptools()
 from setuptools import setup, find_packages
 
 README = open('README').read()
-VERSION = "0.7.1"
+VERSION = "0.7.2"
 
 setup(name='yql',
     version=VERSION,
