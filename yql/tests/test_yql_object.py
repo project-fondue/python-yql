@@ -101,7 +101,7 @@ def test_one():
     yqlobj.one()
 
 def test_one_with_one_result():
-    """Test that accessing one result raises exception"""
+    """Test accessing data with one result."""
     res = yqlobj3.one()
     assert res.get("title") == "Pandas"
 
