@@ -1,3 +1,7 @@
+* 0.7.1
+    * Set two-legged Oauth to use private endpoint by default `LP:830487 <https://bugs.launchpad.net/bugs/830487>`_
+    * fix broken live test caused by a change a bit.ly's end.
+    * Fix erroneous test docstring.
 * 0.7
     * Fix issues with https causing invalid oauth sigs in three-legged oauth.
     * Move logging into it's own file
