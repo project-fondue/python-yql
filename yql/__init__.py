@@ -35,8 +35,6 @@ try:
 except ImportError: # pragma: no cover
     from cgi import parse_qs, parse_qsl
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
-
 __author__ = 'Stuart Colville'
 __version__ = '0.7.2'
 __all__ = ['Public', 'TwoLegged', 'ThreeLegged']
