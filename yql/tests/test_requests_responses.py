@@ -154,7 +154,7 @@ def test_get_two_legged_request_keys():
     # Accessed this was because it's private
     request =  y._TwoLegged__two_legged_request('http://google.com')
     assert set(['oauth_nonce', 'oauth_version', 'oauth_timestamp', 
-        'oauth_consumer_key', 'oauth_signature_method',
+        'oauth_consumer_key', 'oauth_signature_method', 'oauth_body_hash',
         'oauth_version', 'oauth_signature']) == set(request.keys())
 
 def test_get_two_legged_request_values():
