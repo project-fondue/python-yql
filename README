@@ -18,7 +18,7 @@ Usage
 
     >>> import yql
     >>> y = yql.Public()
-    >>> query = 'select * from flickr.photos.search where text=@text limit 3';
+    >>> query = 'select * from flickr.photos.search where text=@text and api_key="INSERT_API_KEY_HERE" limit 3';
     >>> y.execute(query, {"text": "panda"})
 
 

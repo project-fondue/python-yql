@@ -11,9 +11,7 @@ TODO: Wrap json.loads in try/except
 TODO: More granular error handling
 
 """
-import os
 import re
-import sys
 import time
 import pprint
 
@@ -23,7 +21,7 @@ except ImportError: # pragma: no cover
     import simplejson as json
 
 from urlparse import urlparse
-from urllib import urlencode, unquote
+from urllib import urlencode
 from httplib2 import Http
 
 from yql.utils import get_http_method, clean_url, clean_query
@@ -36,7 +34,7 @@ except ImportError: # pragma: no cover
     from cgi import parse_qs, parse_qsl
 
 __author__ = 'Stuart Colville'
-__version__ = '0.7.2'
+__version__ = '0.7.3'
 __all__ = ['Public', 'TwoLegged', 'ThreeLegged']
 
 QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
@@ -54,7 +52,7 @@ yql_logger = get_logger()
 
 class YQLObj(object):
     """A YQLObject is the object created as the result of a YQL query"""
-    
+
     def __init__(self, result_dict):
         """Init query object"""
         self._raw = result_dict and result_dict.get('query') or {}
@@ -94,11 +92,11 @@ class YQLObj(object):
     @property
     def rows(self):
         """Get a list of rows returned by the query.
-        
+
         Results is a dict with one key but that key changes depending on the results
         This provides a way of getting at the rows list in an arbitrary way.
 
-        Added in version: 0.6 fixes results with 1 item so that they are still 
+        Added in version: 0.6 fixes results with 1 item so that they are still
         returned within a list.
 
         """
@@ -107,7 +105,7 @@ class YQLObj(object):
             vals = self.results.values()
             if len(vals) == 1:
                 result = self.results.values()[0]
-        
+
         if self.count == 1 and result:
             result = [result]
 
@@ -129,7 +127,7 @@ class YQLObj(object):
         count = self._raw.get('count')
         if count:
             return int(count)
-    
+
     @property
     def diagnostics(self):
         """The query diagnostics"""
@@ -158,7 +156,7 @@ class YQLError(Exception):
 
     def __str__(self):
         """Return the error message.
-        
+
         Attempt to parse the json if it fails
         simply return the content attribute instead.
 
@@ -191,9 +189,9 @@ class Public(object):
 
     def __init__(self, api_key=None, shared_secret=None, httplib2_inst=None):
         """Init the base class.
-        
-        Optionally you can pass in an httplib2 instance which allows you 
-        to set-up the instance in a different way for your own uses. 
+
+        Optionally you can pass in an httplib2 instance which allows you
+        to set-up the instance in a different way for your own uses.
 
         Also it's very helpful in a testing scenario.
 
@@ -203,8 +201,8 @@ class Public(object):
         self.http = httplib2_inst or Http()
         self.scheme = HTTPS_SCHEME
         self.__endpoint = PUBLIC_ENDPOINT
-        self.uri = self.get_endpoint_uri() 
-        
+        self.uri = self.get_endpoint_uri()
+
     def get_endpoint_uri(self):
         """Get endpoint"""
         return "http://%s" % self.endpoint
@@ -258,7 +256,7 @@ class Public(object):
     @staticmethod
     def get_placeholder_keys(query):
         """Gets the @var placeholders
-        
+
         http://developer.yahoo.com/yql/guide/var_substitution.html
 
         """
@@ -280,10 +278,10 @@ class Public(object):
         return uri
 
     def execute(self, query, params=None, **kwargs):
-        """Execute YQL query"""    
+        """Execute YQL query"""
         query = clean_query(query)
         url = self.get_uri(query, params, **kwargs)
-        # Just in time change to https avoids 
+        # Just in time change to https avoids
         # invalid oauth sigs
         if self.scheme == HTTPS_SCHEME:
             url = url.replace(HTTP_SCHEME, HTTPS_SCHEME)
@@ -313,7 +311,7 @@ class Public(object):
 
 class TwoLegged(Public):
     """Two legged Auth is simple request which is signed prior to sending"""
-    
+
     def __init__(self, api_key, shared_secret, httplib2_inst=None):
         """Override init to ensure required args"""
         super(TwoLegged, self).__init__(api_key, shared_secret, httplib2_inst)
@@ -325,17 +323,17 @@ class TwoLegged(Public):
     @staticmethod
     def get_base_params():
         """Set-up the basic parameters needed for a request"""
- 
+
         params = {}
         params['oauth_version'] = "1.0"
         params['oauth_nonce'] = oauth.generate_nonce()
         params['oauth_timestamp'] = int(time.time())
-        return params 
-   
-  
+        return params
+
+
     def __two_legged_request(self, resource_url, parameters=None, method=None):
         """Sign a request for two-legged authentication"""
-        
+
         params = self.get_base_params()
         if parameters:
             params.update(parameters)
@@ -346,40 +344,40 @@ class TwoLegged(Public):
             method = "GET"
 
         consumer = oauth.Consumer(self.api_key, self.secret)
-        request = oauth.Request(method=method, url=resource_url, 
+        request = oauth.Request(method=method, url=resource_url,
                                                         parameters=params)
         request.sign_request(self.hmac_sha1_signature, consumer, None)
         return request
-    
-    
+
+
     def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
         query_params = self.get_query_params(query, params, **kwargs)
-    
+
         http_method = get_http_method(query)
-        request = self.__two_legged_request(self.uri, 
+        request = self.__two_legged_request(self.uri,
                        parameters=query_params, method=http_method)
-        uri = "%s?%s" % (self.uri, request.to_postdata()) 
+        uri = "%s?%s" % (self.uri, request.to_postdata())
         uri = clean_url(uri)
         return uri
 
 class ThreeLegged(TwoLegged):
 
     """
-    Three-legged Auth is used when it involves private data such as a 
+    Three-legged Auth is used when it involves private data such as a
     user's contacts.
 
-    Three-legged auth is most likely to be used in a web-site or 
-    web-accessible application. Three-legged auth requires the user 
+    Three-legged auth is most likely to be used in a web-site or
+    web-accessible application. Three-legged auth requires the user
     to authenticate the request through the Yahoo login.
 
     Three-legged auth requires the implementation to:
-        
+
     * Request a token
     * Get a authentication url
-    * User uses the auth url to login which will redirect to a callback 
+    * User uses the auth url to login which will redirect to a callback
       or shows a verfier string on screen
-    * Verifier is read at the callback url or manually provided to get 
+    * Verifier is read at the callback url or manually provided to get
       the access token
     * resources is access
 
@@ -391,9 +389,9 @@ class ThreeLegged(TwoLegged):
     * :meth:`get_access_token`  (returns the access token)
     * :meth:`execute` - makes the request to the protected resource.
 
-    Once the access token has been provided subsequent requests can re-use it. 
-    
-    Access tokens expire after 1 hour, however they can be refreshed with 
+    Once the access token has been provided subsequent requests can re-use it.
+
+    Access tokens expire after 1 hour, however they can be refreshed with
     the :meth:`refresh_token` method
 
 
@@ -409,28 +407,28 @@ class ThreeLegged(TwoLegged):
         self.consumer = oauth.Consumer(self.api_key, self.secret)
 
     def get_token_and_auth_url(self, callback_url=None):
-        """First step is to get the token and then send the request that 
+        """First step is to get the token and then send the request that
         provides the auth URL
 
         Returns a tuple of token and the authorisation URL.
 
         """
 
-        client = oauth.Client(self.consumer) 
+        client = oauth.Client(self.consumer)
 
         params = {}
         params['oauth_callback'] = callback_url or 'oob'
 
         request = oauth.Request(parameters=params)
         url = REQUEST_TOKEN_URL
-        resp, content = client.request(url, "POST", request.to_postdata()) 
+        resp, content = client.request(url, "POST", request.to_postdata())
 
         if resp.get('status') == '200':
             token = oauth.Token.from_string(content)
             yql_logger.debug("token: %s", token)
             data = dict(parse_qsl(content))
             yql_logger.debug("data: %s", data)
-            return token, data['xoauth_request_auth_url'] 
+            return token, data['xoauth_request_auth_url']
         else:
             raise YQLError, (resp, content, url)
 
@@ -439,19 +437,19 @@ class ThreeLegged(TwoLegged):
 
         """Get the access token
 
-        The verifier (required) should have been provided to the 
-        user following login to at the url returned 
+        The verifier (required) should have been provided to the
+        user following login to at the url returned
         by the :meth:`get_token_and_auth_url` method.
-        
-        If not you will need need to extract the auth_verifier 
-        parameter from your callback url on the site where you 
+
+        If not you will need need to extract the auth_verifier
+        parameter from your callback url on the site where you
         are implementing 3-legged auth in order to pass it to this
         function.
 
-        The access token can be stored and re-used for subsequent 
+        The access token can be stored and re-used for subsequent
         calls.
 
-        The stored token will also need to be refreshed periodically 
+        The stored token will also need to be refreshed periodically
         with :meth:`refresh_token`
 
         """
@@ -460,8 +458,8 @@ class ThreeLegged(TwoLegged):
         params['oauth_verifier'] = verifier
 
         oauth_request = oauth.Request.from_consumer_and_token(
-                               self.consumer, token=token, 
-                               http_url=ACCESS_TOKEN_URL, 
+                               self.consumer, token=token,
+                               http_url=ACCESS_TOKEN_URL,
                                http_method="POST",
                                parameters=params)
 
@@ -474,7 +472,7 @@ class ThreeLegged(TwoLegged):
         yql_logger.debug("oauth_url: %s", url)
         postdata = oauth_request.to_postdata()
         yql_logger.debug("oauth_postdata: %s", postdata)
-        resp, content = self.http.request(url, "POST", postdata) 
+        resp, content = self.http.request(url, "POST", postdata)
 
         if resp.get('status') == '200':
             access_token = YahooToken.from_string(content)
@@ -486,24 +484,24 @@ class ThreeLegged(TwoLegged):
 
     def check_token(self, token):
         """Check to see if a token has expired"""
-        
+
         if not hasattr(token, 'timestamp'):
             raise AttributeError, 'token doesn\'t have a timestamp attrbute'
 
         if (int(token.timestamp) + 3600) < time.time():
             token = self.refresh_token(token)
-            
+
         return token
 
 
     def refresh_token(self, token):
-        """Access Tokens only last for one hour from the point of being issued. 
+        """Access Tokens only last for one hour from the point of being issued.
 
-        When a token has expired it needs to be refreshed this method takes an 
+        When a token has expired it needs to be refreshed this method takes an
         expired token and refreshes it.
 
         token parameter can be either a token object or a token string.
-        
+
         """
         if not hasattr(token, "key"):
             token = YahooToken.from_string(token)
@@ -515,7 +513,7 @@ class ThreeLegged(TwoLegged):
 
         oauth_request = oauth.Request.from_consumer_and_token(
                                self.consumer, token=token,
-                               http_url=ACCESS_TOKEN_URL, 
+                               http_url=ACCESS_TOKEN_URL,
                                http_method="POST",
                                parameters=params)
 
@@ -527,8 +525,8 @@ class ThreeLegged(TwoLegged):
         yql_logger.debug("oauth_url: %s", url)
         postdata = oauth_request.to_postdata()
         yql_logger.debug("oauth_postdata: %s", postdata)
-        resp, content = self.http.request(url, "POST", postdata) 
-        
+        resp, content = self.http.request(url, "POST", postdata)
+
         if resp.get('status') == '200':
             access_token = YahooToken.from_string(content)
             yql_logger.debug("oauth_access_token: %s", access_token)
@@ -542,7 +540,7 @@ class ThreeLegged(TwoLegged):
         query_params = self.get_query_params(query, params, **kwargs)
 
         token = kwargs.get("token")
-        
+
         if hasattr(token, "yahoo_guid"):
             query_params["oauth_yahoo_guid"] = getattr(token, "yahoo_guid")
 
@@ -553,21 +551,21 @@ class ThreeLegged(TwoLegged):
         yql_logger.debug("query_params: %s", query_params)
         http_method = get_http_method(query)
         oauth_request = oauth.Request.from_consumer_and_token(
-                                        self.consumer, http_url=self.uri, 
+                                        self.consumer, http_url=self.uri,
                                         token=token, parameters=query_params,
                                         http_method=http_method)
         yql_logger.debug("oauth_request: %s", oauth_request)
-        # Sign request 
+        # Sign request
         oauth_request.sign_request(
                             self.hmac_sha1_signature, self.consumer, token)
-        
+
         yql_logger.debug("oauth_signed_request: %s", oauth_request)
         uri = "%s?%s" % (self.uri,  oauth_request.to_postdata())
         return uri.replace('+', '%20').replace('%7E', '~')
 
 
 class YahooToken(oauth.Token):
-    """A subclass of oauth.Token with the addition of a place to 
+    """A subclass of oauth.Token with the addition of a place to
     stash the session_handler which is required for token refreshing
 
     """
@@ -575,33 +573,33 @@ class YahooToken(oauth.Token):
     @staticmethod
     def from_string(data_string):
         """Deserializes a token from a string like one returned by
-        
+
         `to_string()`."""
- 
+
         if not len(data_string):
             raise ValueError("Invalid parameter string.")
- 
+
         params = parse_qs(data_string, keep_blank_values=False)
         if not len(params):
             raise ValueError("Invalid parameter string.")
- 
+
         try:
             key = params['oauth_token'][0]
         except Exception:
             raise ValueError("'oauth_token' not found in OAuth request.")
- 
+
         try:
             secret = params['oauth_token_secret'][0]
         except Exception:
             raise ValueError("'oauth_token_secret' not found in "
                 "OAuth request.")
- 
+
         token = YahooToken(key, secret)
 
         session_handle = params.get('oauth_session_handle')
         if session_handle:
             setattr(token, 'session_handle', session_handle[0])
- 
+
         timestamp = params.get('token_creation_timestamp')
         if timestamp:
             setattr(token, 'timestamp', timestamp[0])
@@ -618,9 +616,9 @@ class YahooToken(oauth.Token):
         """Returns this token as a plain string, suitable for storage.
         The resulting string includes the token's secret, so you should never
         send or store this string where a third party can read it.
-        
+
         """
- 
+
         data = {
             'oauth_token': self.key,
             'oauth_token_secret': self.secret,
@@ -634,6 +632,6 @@ class YahooToken(oauth.Token):
 
         if self.callback_confirmed is not None:
             data['oauth_callback_confirmed'] = self.callback_confirmed
-        
+
         return urlencode(data)
 

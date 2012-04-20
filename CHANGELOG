@@ -1,3 +1,7 @@
+* 0.7.3
+    * Bugfixes provided by Jannis Leidel
+    * Fixed examples in docs following flickr tables change requiring api key
+    * Fixed live tests.
 * 0.7.2
     * Sync versioning in both lib + setup.py
 * 0.7.1
@@ -11,7 +15,7 @@
     * Add one() method for single results.
 * 0.6.1
     * Fix `LP:663232 <https://bugs.launchpad.net/bugs/663232>`_ remove setter for Python2.5 compatibility.
-* 0.6 
+* 0.6
     * Added changelog.
     * Documentation updates.
     * Fixes for compatibility with latest oauth
@@ -27,12 +31,12 @@
     * Fix deletions.
     * Added logging.
     * Scheme is now more easily configurable.
-* 0.4 
+* 0.4
     * Add support for INSERT, UPDATE and DELETE
     * Update tests
 * 0.3
     * Improve tests and move to returning YQLObjects instead of raw data
-* 0.2 
+* 0.2
     * Small bug-fixes and test improvements
-* 0.1 
+* 0.1
     * Initial release

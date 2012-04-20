@@ -28,13 +28,13 @@ Or alternatively:
 
     sudo easy_install yql
 
-The following example shows a simple query using the public endpoint.
+The following example shows a simple query using the public endpoint. (The API KEY for flickr has been redacted)
 
 .. sourcecode:: python
 
     >>> import yql
     >>> y = yql.Public()
-    >>> query = 'select * from flickr.photos.search where text="panda" limit 3';
+    >>> query = 'select * from flickr.photos.search where text="panda" and api_key="INSERT_API_KEY_HERE" limit 3';
     >>> result = y.execute(query)
     >>> result.rows
     [{u'isfamily': u'0', u'title': u'Panda can has fruit', u'farm': u'3', u'ispublic': u'1', u'server': u'2605', u'isfriend': u'0', u'secret': u'62ccb5d94e', u'owner': u'99045337@N00', u'id': u'4135649462'}, {u'isfamily': u'0', u'title': u'Hey Panda', u'farm': u'3', u'ispublic': u'1', u'server': u'2799', u'isfriend': u'0', u'secret': u'1632cb8ab8', u'owner': u'99045337@N00', u'id': u'4134889385'}, {u'isfamily': u'0', u'title': u'Panda Lin Hui', u'farm': u'3', u'ispublic': u'1', u'server': u'2737', u'isfriend': u'0', u'secret': u'099b30a0a4', u'owner': u'37843112@N07', u'id': u'4135631774'}]
@@ -44,6 +44,9 @@ The following example shows a simple query using the public endpoint.
     Panda can has fruit
     Hey Panda
     Panda Lin Hui
+
+.. note:: 
+    To make a query to Flickr you need to get an API key here: http://www.flickr.com/services/apps/create/apply/.
 
 
 Contents

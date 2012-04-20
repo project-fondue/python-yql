@@ -27,7 +27,7 @@ def get_logger():
     """Set-upt the logger if enabled or fallback to NullHandler."""
     if os.environ.get("YQL_LOGGING", False):
         log_handler = logging.handlers.RotatingFileHandler(
-                                LOG_FILENAME, maxBytes=1024*1024, 
+                                LOG_FILENAME, maxBytes=1024*1024,
                                 backupCount=5)
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         log_handler.setFormatter(formatter)
@@ -35,4 +35,5 @@ def get_logger():
         log_handler = NullHandler()
     yql_logger.addHandler(log_handler)
     return yql_logger
+
 

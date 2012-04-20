@@ -19,7 +19,7 @@ def get_http_method(query):
         if method[0] in lower_query:
             http_method = method[1]
             break
-    
+
     return http_method
 
 def clean_url(url):
