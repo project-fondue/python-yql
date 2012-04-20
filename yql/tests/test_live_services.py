@@ -2,11 +2,11 @@
 
 *** SKIPPED BY DEFAULT ***
 
-These tests won't normally be run, as part of the main test suite but are run by 
-our hudson instance to tell us should Yahoo's API change in some way that will 
+These tests won't normally be run, as part of the main test suite but are run by
+our hudson instance to tell us should Yahoo's API change in some way that will
 break python-yql.
 
-Note to end-users: These tests are dependent on defining a secrets file with API 
+Note to end-users: These tests are dependent on defining a secrets file with API
 keys and other secrets which are required to carry out these tests.
 
 If the secrets file isn't present the tests are skipped
@@ -35,21 +35,22 @@ except ImportError:
 
 class LiveTestCase(TestCase):
     """A test case containing live tests"""
-        
+
     def test_write_bitly_url(self):
         """Test writing bit.ly url"""
 
-        query = """USE 'http://www.datatables.org/bitly/bit.ly.shorten.xml'; 
-                   SELECT * from bit.ly.shorten where login='%s' and apiKey='%s' and 
-                   longUrl='http://yahoo.com'""" % (
-                                            BITLY_USER, BITLY_API_KEY)
+        query = """USE 'http://www.datatables.org/bitly/bit.ly.shorten.xml';
+           SELECT * from bit.ly.shorten where login='%s' and apiKey='%s' and
+           longUrl='http://yahoo.com'""" % (BITLY_USER, BITLY_API_KEY)
+
         y = yql.TwoLegged(YQL_API_KEY, YQL_SHARED_SECRET)
         res = y.execute(query)
         assert res.one()["data"]["url"] == "http://yhoo.it/9PPTOr"
 
     def test_public_request(self):
         """Test public two-legged request to flickr"""
-        query = """select * from flickr.photos.search where text="panda" LIMIT 3"""
+        query = """select * from flickr.photos.search where
+                   text="panda" and api_key='%s' LIMIT 3""" % FLICKR_API_KEY
         y = yql.TwoLegged(YQL_API_KEY, YQL_SHARED_SECRET)
         res = y.execute(query)
         assert len(res.rows) == 3
@@ -57,7 +58,7 @@ class LiveTestCase(TestCase):
     def test_two_legged_weather_select(self):
         """Tests the weather tables using two-legged"""
         query = """select * from weather.forecast where location in
-                (select id from xml where 
+                (select id from xml where
                 url='http://xoap.weather.com/search/search?where=london'
                 and itemPath='search.loc')"""
         y = yql.TwoLegged(YQL_API_KEY, YQL_SHARED_SECRET)
@@ -69,8 +70,8 @@ class LiveTestCase(TestCase):
         y = yql.ThreeLegged(YQL_API_KEY, YQL_SHARED_SECRET)
 
         timestamp = time()
-        query = """UPDATE social.profile.status 
-                   SET status='Using YQL. %s Update' 
+        query = """UPDATE social.profile.status
+                   SET status='Using YQL. %s Update'
                    WHERE guid=me"""  % timestamp
 
         token_store = FileTokenStore(CACHE_DIR, secret='gsfdsfdsfdsfs')
@@ -92,7 +93,7 @@ class LiveTestCase(TestCase):
 
         res = y.execute(query, token=token)
         assert res.rows[0] == "ok"
-        new_query = """select message from social.profile.status where guid=me""" 
+        new_query = """select message from social.profile.status where guid=me"""
         res = y.execute(new_query, token=token)
         assert res.rows[0].get("message") == "Using YQL. %s Update" % timestamp
 
@@ -101,8 +102,8 @@ class LiveTestCase(TestCase):
         y = yql.ThreeLegged(YQL_API_KEY, YQL_SHARED_SECRET)
         query = 'INSERT INTO meme.user.posts (type, content) VALUES("text", "test with pythonyql")'
         token_store = FileTokenStore(CACHE_DIR, secret='fjdsfjllds')
-        
-        store_name = "meme" 
+
+        store_name = "meme"
         stored_token = token_store.get(store_name)
         if not stored_token:
             # Do the dance
@@ -126,7 +127,7 @@ class LiveTestCase(TestCase):
         pubid = None
         if res.rows[0].get("post") and res.rows[0]["post"].get("pubid"):
             pubid = res.rows[0]["post"]["pubid"]
-        
+
         # Delete the post we've just created
         query = 'DELETE FROM meme.user.posts WHERE pubid=@pubid'
         res2 = y.execute(query, token=token, params={"pubid": pubid})
@@ -142,11 +143,11 @@ class LiveTestCase(TestCase):
 
     def test_xpath_works(self):
         y = yql.Public()
-        query = """SELECT * FROM html 
-                   WHERE url='http://google.co.uk' 
-                   AND xpath="//input[contains(@name, 'q')]" 
+        query = """SELECT * FROM html
+                   WHERE url='http://google.co.uk'
+                   AND xpath="//input[contains(@name, 'q')]"
                    LIMIT 10"""
         res = y.execute(query)
-        assert res.rows[0].get("title") == "Google Search"
+        assert res.rows[0].get("title") == "Search"
 
 
