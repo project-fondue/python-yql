@@ -3,11 +3,8 @@ keys.py
 .coverage
 build
 dist
-python_yql.egg-info
-setuptools-0.6c11-py2.6.egg
-yql.egg-info
-setuptools-0.6c11-py2.5.egg
-setuptools-0.6c11-py2.6.egg
+*.egg-info
+*.egg
 cache
 secrets.py
 *.log
