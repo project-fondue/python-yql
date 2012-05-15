@@ -1,0 +1,4 @@
+httplib2
+oauth2
+nose
+coverage
