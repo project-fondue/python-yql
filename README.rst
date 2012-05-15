@@ -35,5 +35,5 @@ Documentation can be found at http://python-yql.org/
 Contributions
 =============
 
-Bug-fixes/Features/Patches always welcome - please add branches to the launchpad project.
+Bug-fixes/Features/Patches always welcome - please submit a pull request on github.com
 
