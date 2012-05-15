@@ -25,7 +25,7 @@ Usage
 Source-code
 ===========
 
-Branches exist at https://launchpad.net/python-yql
+Branches exist at https://github.com/project-fondue/python-yql
 
 Documentation
 =============
