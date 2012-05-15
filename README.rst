@@ -4,6 +4,12 @@ Python YQL
 
 Python YQL is a client library for making queries with Yahoo Query Language.
 
+
+Test Status
+============
+
+.. image:: https://secure.travis-ci.org/project-fondue/python-yql.png
+
 Installation
 ============
 
