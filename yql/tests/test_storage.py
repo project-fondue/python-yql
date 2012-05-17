@@ -1,3 +1,4 @@
+import os
 import tempfile
 from unittest import TestCase
 
@@ -50,3 +51,13 @@ class FileTokenStoreTest(TestCase):
         token = store.get('foo')
 
         self.assertTrue('some-token' in token.to_string())
+
+    def test_cannot_retrieve_token_if_path_doesnt_exist(self):
+        directory = tempfile.mkdtemp()
+        store = FileTokenStore(directory)
+
+        store.set('foo', '?key=%s&oauth_token=some-oauth-token&oauth_token_secret=some-token-secret' % 'some-token')
+
+        os.remove(store.get_filepath('foo'))
+
+        self.assertIsNone(store.get('foo'))
