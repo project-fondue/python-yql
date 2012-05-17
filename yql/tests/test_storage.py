@@ -42,4 +42,11 @@ class FileTokenStoreTest(TestCase):
             self.assertTrue('some-token' in stored_file.read())
 
     def test_retrieves_token_from_filesystem(self):
-        raise SkipTest('still need to figure out why the need to pass more arguments to retrieve the token')
+        directory = tempfile.mkdtemp()
+        store = FileTokenStore(directory)
+
+        store.set('foo', '?key=%s&oauth_token=some-oauth-token&oauth_token_secret=some-token-secret' % 'some-token')
+
+        token = store.get('foo')
+
+        self.assertTrue('some-token' in token.to_string())
