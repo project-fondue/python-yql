@@ -17,7 +17,7 @@ data_dict2 = json.loads("""{"query":{"count":"1","created":"2009-11-20T12:11:56Z
 yqlobj = YQLObj(data_dict)
 yqlobj2 = YQLObj({})
 yqlobj3 = YQLObj(data_dict2)
-    
+
 
 @raises(AttributeError)
 def test_yql_object_one():
@@ -45,32 +45,32 @@ def test_yqlobj_lang():
 def test_yqlobj_results():
     """Check the results."""
     expected_results = {u'photo': [
-                            {u'isfamily': u'0', 
-                             u'title': u'Pandas', 
-                             u'farm': u'3', 
-                             u'ispublic': u'1', 
-                             u'server': u'2510', 
-                             u'isfriend': u'0', 
-                             u'secret': u'ce1f6092de', 
-                             u'owner': u'12346075@N00', 
-                             u'id': u'4117944207'}, 
-                            {u'isfamily': u'0', 
-                             u'title': u'Pandas', 
-                             u'farm': u'3', 
-                             u'ispublic': u'1', 
-                             u'server': u'2754', 
-                             u'isfriend': u'0', 
-                             u'secret': u'649632a3e2', 
-                             u'owner': u'12346075@N00', 
-                             u'id': u'4118710292'}, 
-                            {u'isfamily': u'0', 
-                             u'title': u'fuzzy flowers (Kalanchoe tomentosa)', 
-                             u'farm': u'3', 
-                             u'ispublic': u'1', 
-                             u'server': u'2586', 
-                             u'isfriend': u'0', 
-                             u'secret': u'ec0b508684', 
-                             u'owner': u'28451051@N02', 
+                            {u'isfamily': u'0',
+                             u'title': u'Pandas',
+                             u'farm': u'3',
+                             u'ispublic': u'1',
+                             u'server': u'2510',
+                             u'isfriend': u'0',
+                             u'secret': u'ce1f6092de',
+                             u'owner': u'12346075@N00',
+                             u'id': u'4117944207'},
+                            {u'isfamily': u'0',
+                             u'title': u'Pandas',
+                             u'farm': u'3',
+                             u'ispublic': u'1',
+                             u'server': u'2754',
+                             u'isfriend': u'0',
+                             u'secret': u'649632a3e2',
+                             u'owner': u'12346075@N00',
+                             u'id': u'4118710292'},
+                            {u'isfamily': u'0',
+                             u'title': u'fuzzy flowers (Kalanchoe tomentosa)',
+                             u'farm': u'3',
+                             u'ispublic': u'1',
+                             u'server': u'2586',
+                             u'isfriend': u'0',
+                             u'secret': u'ec0b508684',
+                             u'owner': u'28451051@N02',
                              u'id': u'4118698318'}
                         ]}
     assert yqlobj.results == expected_results
