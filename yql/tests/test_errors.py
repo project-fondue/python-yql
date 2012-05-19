@@ -2,7 +2,7 @@ import json
 import os
 from unittest import TestCase
 
-from yql import YQLError
+from yql import NotOneError, YQLError
 
 
 class YQLErrorTest(TestCase):
@@ -21,3 +21,10 @@ class YQLErrorTest(TestCase):
 
         #TODO: verify if this is really the intended representation
         self.assertEqual("u'some description'", str(error))
+
+
+class NotOneErrorTest(TestCase):
+    def test_is_represented_by_message_as_json(self):
+        error = NotOneError('some message')
+
+        self.assertEqual("'some message'", str(error))
