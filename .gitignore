@@ -8,3 +8,4 @@ dist
 cache
 secrets.py
 *.log
+*.pyc
