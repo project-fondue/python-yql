@@ -26,6 +26,9 @@ class NullHandler(logging.Handler):
 def get_logger():
     """Set-upt the logger if enabled or fallback to NullHandler."""
     if os.environ.get("YQL_LOGGING", False):
+        dirname = os.path.dirname(LOG_FILENAME)
+        if not os.path.exists(LOG_DIRECTORY):
+            os.mkdir(LOG_DIRECTORY)
         log_handler = logging.handlers.RotatingFileHandler(
                                 LOG_FILENAME, maxBytes=1024*1024,
                                 backupCount=5)
