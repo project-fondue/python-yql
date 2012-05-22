@@ -34,11 +34,10 @@ class FileTokenStore(BaseTokenStore):
         """Initialize token storage"""
 
         if not os.path.exists(dir_path):
-            raise TokenStoreError, "Path is not valid"
+            raise TokenStoreError("Path is not valid")
 
         self.base_dir = dir_path
         self.secret = secret or SECRET
-
 
     def get_filepath(self, name):
         """Build filepath"""
@@ -47,7 +46,6 @@ class FileTokenStore(BaseTokenStore):
         filepath = os.path.join(self.base_dir, filename)
 
         return filepath
-
 
     def set(self, name, token):
         """Write a token to file"""
@@ -61,7 +59,6 @@ class FileTokenStore(BaseTokenStore):
             f_handle.write(token)
             f_handle.close()
 
-
     def get(self, name):
         """Get a token from the filesystem"""
 
@@ -74,4 +71,3 @@ class FileTokenStore(BaseTokenStore):
 
             token = YahooToken.from_string(token)
             return token
-
