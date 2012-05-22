@@ -52,7 +52,7 @@ class FileTokenStoreTest(TestCase):
         store.set('foo', '?key=%s&oauth_token=some-oauth-token&'\
                   'oauth_token_secret=some-token-secret' % 'some-token')
         os.remove(store.get_filepath('foo'))
-        self.assertIsNone(store.get('foo'))
+        self.assertTrue(store.get('foo') is None)
 
     def test_saves_token_to_filesystem(self):
         directory = tempfile.mkdtemp()
