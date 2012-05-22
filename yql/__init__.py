@@ -168,9 +168,12 @@ class YQLError(Exception):
 
         if content and content.get("error") and content["error"].get(
                                                         "description"):
-            return repr(content['error']['description'])
+            return content['error']['description']
         else:
-            return repr(self.content)
+            if isinstance(self.content, basestring):
+                return self.content
+            else:
+                return repr(self.content)
 
 
 class NotOneError(Exception):
@@ -181,7 +184,7 @@ class NotOneError(Exception):
 
     def  __str__(self):
         """Return the error message"""
-        return repr(self.message)
+        return self.message
 
 
 class Public(object):
