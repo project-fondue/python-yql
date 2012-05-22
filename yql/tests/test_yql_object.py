@@ -24,23 +24,28 @@ def test_yql_object_one():
     """Test that invalid query raises AttributeError"""
     yqlobj.query = 1
 
+
 def test_yqlobj_uri():
     """Test that the query uri is as expected."""
     assert yqlobj.uri == u"http://query.yahooapis.com/v1/yql?q=select+*+"\
-                          "from+flickr.photos.search+where+text%3D%22panda%22+limit+3"
+                   "from+flickr.photos.search+where+text%3D%22panda%22+limit+3"
+
 
 def test_yqlobj_query():
     """Test retrieval of the actual query"""
     assert yqlobj.query == u'select * from flickr.photos.search '\
                             'where text="panda" limit 3'
 
+
 def test_yqlobj_count():
     """Check we have 3 records"""
     assert yqlobj.count == 3
 
+
 def test_yqlobj_lang():
     """Check the lang attr."""
     assert yqlobj.lang == u"en-US"
+
 
 def test_yqlobj_results():
     """Check the results."""
@@ -75,17 +80,21 @@ def test_yqlobj_results():
                         ]}
     assert yqlobj.results == expected_results
 
+
 def test_yqlobj_raw():
     """Check the raw attr."""
     assert yqlobj.raw == data_dict.get('query')
+
 
 def test_yqlobj_diagnostics():
     """Check the diagnostics"""
     assert yqlobj.diagnostics == data_dict.get('query').get('diagnostics')
 
+
 def test_query_is_none():
     """Check query is None with no data."""
     assert yqlobj2.query is None
+
 
 def test_rows():
     """Test we can iterate over the rows."""
@@ -95,13 +104,14 @@ def test_rows():
 
     assert stuff == [u'2510', u'2754', u'2586']
 
+
 @raises(NotOneError)
 def test_one():
     """Test that accessing one result raises exception"""
     yqlobj.one()
 
+
 def test_one_with_one_result():
     """Test accessing data with one result."""
     res = yqlobj3.one()
     assert res.get("title") == "Pandas"
-
