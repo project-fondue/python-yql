@@ -1,12 +1,12 @@
 from unittest import TestCase
 
-import yql
 from nose.tools import raises
-
 try:
     from urlparse import parse_qs, parse_qsl
 except ImportError:
     from cgi import parse_qs, parse_qsl
+
+import yql
 
 
 class YahooTokenTest(TestCase):

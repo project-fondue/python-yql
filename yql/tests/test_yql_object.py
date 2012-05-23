@@ -4,6 +4,7 @@ import json
 from unittest import TestCase
 
 from nose.tools import raises
+
 from yql import YQLObj, NotOneError
 
 

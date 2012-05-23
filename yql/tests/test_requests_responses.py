@@ -2,26 +2,28 @@ import os
 import urlparse
 from urllib import urlencode
 from email import message_from_file
-
-from nose.tools import raises
-from nose import with_setup
-import oauth2 as oauth
-import httplib2
-import yql
-
 try:
     from urlparse import parse_qsl
 except ImportError:
     from cgi import parse_qsl
 
+from nose.tools import raises
+from nose import with_setup
+import oauth2 as oauth
+import httplib2
+
+import yql
+
+
 HTTP_SRC_DIR = os.path.join(os.path.dirname(__file__), "http_src/")
+
 
 class MyHttpReplacement(object):
     """Build a stand-in for httplib2.Http that takes its
     response headers and bodies from files on disk
 
     http://bitworking.org/news/172/Test-stubbing-httplib2
-    
+
     """
 
     def __init__(self, cache=None, timeout=None):
@@ -56,7 +58,7 @@ class RequestDataHttpReplacement:
 
     def __init__(self):
         pass
-    
+
     def request(self, uri, *args, **kwargs):
         """return the request data"""
         return uri, args, kwargs
@@ -82,15 +84,15 @@ def execute_return_uri(self, query, params=None, **kwargs):
     return self.get_uri(query, params, **kwargs)
 
 class TestPublic(yql.Public):
-    """Subclass of YQL to allow returning of the request data"""    
+    """Subclass of YQL to allow returning of the request data"""
     pass
 
 class TestTwoLegged(yql.TwoLegged):
-    """Subclass of YQLTwoLegged to allow returning of the request data"""    
+    """Subclass of YQLTwoLegged to allow returning of the request data"""
     pass
 
 class TestThreeLegged(yql.ThreeLegged):
-    """Subclass of YQLTwoLegged to allow returning of the request data"""    
+    """Subclass of YQLTwoLegged to allow returning of the request data"""
     pass
 
 setattr(TestPublic, 'execute', execute_return_uri)
@@ -141,7 +143,7 @@ def test_api_key_and_secret_attrs():
 def test_api_key_and_secret_attrs2():
     y = yql.ThreeLegged('test-api-key', 'test-secret')
     assert y.api_key == 'test-api-key'
-    assert y.secret == 'test-secret'   
+    assert y.secret == 'test-secret'
 
 def test_get_base_params():
     y = yql.ThreeLegged('test-api-key', 'test-secret')
@@ -153,7 +155,7 @@ def test_get_two_legged_request_keys():
     y = yql.TwoLegged('test-api-key', 'test-secret')
     # Accessed this was because it's private
     request =  y._TwoLegged__two_legged_request('http://google.com')
-    assert set(['oauth_nonce', 'oauth_version', 'oauth_timestamp', 
+    assert set(['oauth_nonce', 'oauth_version', 'oauth_timestamp',
         'oauth_consumer_key', 'oauth_signature_method', 'oauth_body_hash',
         'oauth_version', 'oauth_signature']) == set(request.keys())
 
@@ -168,7 +170,7 @@ def test_get_two_legged_request_values():
 def test_get_two_legged_request_param():
     y = yql.TwoLegged('test-api-key', 'test-secret')
     # Accessed this way because it's private
-    request =  y._TwoLegged__two_legged_request('http://google.com', 
+    request =  y._TwoLegged__two_legged_request('http://google.com',
                                                         {"test-param": "test"})
     assert request.get('test-param') == 'test'
 
@@ -197,7 +199,7 @@ def test_raises_for_three_legged_with_no_token():
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_request_for_three_legged():
     query = 'SELECT * from foo'
-    y = TestThreeLegged('test-api-key', 'test-secret', 
+    y = TestThreeLegged('test-api-key', 'test-secret',
                                         httplib2_inst=httplib2.Http())
     token = oauth.Token.from_string(
                         'oauth_token=foo&oauth_token_secret=bar')
@@ -221,10 +223,10 @@ def test_three_legged_execution_raises_value_error_with_invalid_uri():
     y.uri = "fail"
     token = yql.YahooToken('tes1t', 'test2')
     y.execute("SELECT foo meh meh ", token=token)
- 
+
 @with_setup(set_up_http_from_file, tear_down_http_from_file)
 def test_get_access_token_request3():
-    y = yql.ThreeLegged('test', 'test-does-not-exist', 
+    y = yql.ThreeLegged('test', 'test-does-not-exist',
                                 httplib2_inst=httplib2.Http())
     new_token = yql.YahooToken('test', 'test2')
     new_token.session_handle = 'sess_handle_test'

@@ -3,6 +3,7 @@
 from unittest import TestCase
 
 from nose.tools import raises
+
 import yql
 
 
