@@ -1,12 +1,12 @@
 """"Utility functions"""
 import re
 
+
 METHOD_MAP = (
     ("insert", "POST"),
     ("update", "PUT"),
     ("delete", "POST"),
 )
-
 MULTI_PLUS = re.compile(r"\+{2,}")
 MULTI_SPACE = re.compile(r" {2,}")
 
