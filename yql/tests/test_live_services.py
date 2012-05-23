@@ -31,7 +31,7 @@ try:
 
     from secrets import *
 except ImportError:
-    raise SkipTest
+    raise SkipTest("Unable to find secrets directory")
 
 class LiveTestCase(TestCase):
     """A test case containing live tests"""
