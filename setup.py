@@ -28,9 +28,7 @@ setup(name='yql',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires = sys.version_info < (2,6) \
-            and ['httplib2', 'simplejson', 'oauth2'] \
-            or ['httplib2', 'oauth2'],
+    install_requires = ['httplib2', 'oauth2'],
     tests_require = ['nosetests', 'coverage'],
     test_suite="yql.tests",
     entry_points = """\
