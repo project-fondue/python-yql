@@ -9,7 +9,6 @@ from yql.storage import BaseTokenStore, FileTokenStore, TokenStoreError
 
 
 class BaseTokenStoreTest(TestCase):
-
     @raises(NotImplementedError)
     def test_must_implement_set(self):
         class FooStore(BaseTokenStore):
@@ -26,7 +25,6 @@ class BaseTokenStoreTest(TestCase):
 
 
 class FileTokenStoreTest(TestCase):
-
     @raises(TokenStoreError)
     def test_must_be_instanced_with_an_existant_path(self):
         FileTokenStore('/some/inexistant/path')

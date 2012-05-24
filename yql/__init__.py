@@ -7,19 +7,13 @@ YQL client for Python
 Author: Stuart Colville http://muffinresearch.co.uk/
 Docs at: http://python-yql.org/
 
-TODO: Wrap json.loads in try/except
 TODO: More granular error handling
 
 """
+import json
 import re
 import time
 import pprint
-
-try:
-    import json
-except ImportError: # pragma: no cover
-    import simplejson as json
-
 from urlparse import urlparse
 from urllib import urlencode
 from httplib2 import Http
@@ -33,22 +27,28 @@ try:
 except ImportError: # pragma: no cover
     from cgi import parse_qs, parse_qsl
 
+
 __author__ = 'Stuart Colville'
 __version__ = '0.7.3'
 __all__ = ['Public', 'TwoLegged', 'ThreeLegged']
 
+
 QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
+
 
 REQUEST_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_request_token'
 ACCESS_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_token'
 AUTHORIZATION_URL = 'https://api.login.yahoo.com/oauth/v2/request_auth'
+
 
 PUBLIC_ENDPOINT = "query.yahooapis.com/v1/public/yql"
 PRIVATE_ENDPOINT = "query.yahooapis.com/v1/yql"
 HTTP_SCHEME = "http:"
 HTTPS_SCHEME = "https:"
 
+
 yql_logger = get_logger()
+
 
 class YQLObj(object):
     """A YQLObject is the object created as the result of a YQL query"""
@@ -364,6 +364,7 @@ class TwoLegged(Public):
         uri = clean_url(uri)
         return uri
 
+
 class ThreeLegged(TwoLegged):
 
     """
@@ -637,4 +638,3 @@ class YahooToken(oauth.Token):
             data['oauth_callback_confirmed'] = self.callback_confirmed
 
         return urlencode(data)
-

@@ -14,13 +14,14 @@ If the secrets file isn't present the tests are skipped
 """
 import os
 import sys
+from time import time
+from unittest import TestCase
+
+from nose.plugins.skip import SkipTest
 
 import yql
 from yql.storage import FileTokenStore
-from nose.plugins.skip import SkipTest
-from time import time
 
-from unittest import TestCase
 
 SECRETS_DIR = os.path.join(os.path.dirname(__file__), "../../../secrets")
 CACHE_DIR = os.path.abspath(os.path.join(SECRETS_DIR, "cache"))
@@ -31,7 +32,8 @@ try:
 
     from secrets import *
 except ImportError:
-    raise SkipTest
+    raise SkipTest("Unable to find secrets directory")
+
 
 class LiveTestCase(TestCase):
     """A test case containing live tests"""
