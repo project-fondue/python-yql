@@ -9,6 +9,7 @@ Test Status
 ============
 
 .. image:: https://secure.travis-ci.org/project-fondue/python-yql.png
+   :target: http://travis-ci.org/project-fondue/python-yql
 
 Installation
 ============
