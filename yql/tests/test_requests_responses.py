@@ -108,13 +108,13 @@ class PublicStubbedRequestTest(StubbedHttpTestCase):
         query = 'SELECT * from foo'
         y = TestPublic(httplib2_inst=httplib2.Http())
         uri = y.execute(query, env="http://foo.com")
-        self.assertGreater(uri.find(urlencode({"env":"http://foo.com"})), -1)
+        self.assertTrue(uri.find(urlencode({"env":"http://foo.com"})) > -1)
 
     def test_name_param_inserted_for_public_yql(self):
         query = 'SELECT * from foo WHERE dog=@dog'
         y = TestPublic(httplib2_inst=httplib2.Http())
         uri = y.execute(query, {"dog": "fifi"})
-        self.assertGreater(uri.find('dog=fifi'), -1)
+        self.assertTrue(uri.find('dog=fifi') >-1)
 
 
 class PublicStubbedFromFileTest(StubbedHttpTestCase):
