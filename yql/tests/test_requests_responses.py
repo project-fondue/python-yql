@@ -92,22 +92,20 @@ def execute_return_uri(self, query, params=None, **kwargs):
 
 class TestPublic(yql.Public):
     """Subclass of YQL to allow returning of the request data"""
-    pass
+
+    execute = execute_return_uri
 
 
 class TestTwoLegged(yql.TwoLegged):
     """Subclass of YQLTwoLegged to allow returning of the request data"""
-    pass
+
+    execute = execute_return_uri
 
 
 class TestThreeLegged(yql.ThreeLegged):
     """Subclass of YQLTwoLegged to allow returning of the request data"""
-    pass
 
-
-setattr(TestPublic, 'execute', execute_return_uri)
-setattr(TestTwoLegged, 'execute', execute_return_uri)
-setattr(TestThreeLegged, 'execute', execute_return_uri)
+    execute = execute_return_uri
 
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
