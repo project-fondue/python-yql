@@ -131,21 +131,24 @@ class PublicTest(TestCase):
         uri = y.execute(query, {"dog": "fifi"})
         self.assertGreater(uri.find('dog=fifi'), -1)
 
+        @with_setup(set_up_http_from_file, tear_down_http_from_file)
+        def test_json_response_from_file(self):
+            query = 'SELECT * from foo WHERE dog=@dog'
+            y = yql.Public(httplib2_inst=httplib2.Http())
+            content = y.execute(query, {"dog": "fifi"})
+            self.assertEqual(content.count, 3)
 
-@raises(TypeError)
-def test_yql_with_2leg_auth_raises_typerror():
-    TestTwoLegged()
 
-@raises(TypeError)
-def test_yql_with_3leg_auth_raises_typerror():
-    TestThreeLegged()
+class TwoLeggedTest(TestCase):
+    @raises(TypeError)
+    def test_yql_with_2leg_auth_raises_typerror(self):
+        TestTwoLegged()
 
-@with_setup(set_up_http_from_file, tear_down_http_from_file)
-def test_json_response_from_file():
-    query = 'SELECT * from foo WHERE dog=@dog'
-    y = yql.Public(httplib2_inst=httplib2.Http())
-    content = y.execute(query, {"dog": "fifi"})
-    assert content.count == 3
+
+class ThreeLeggedTest(TestCase):
+    @raises(TypeError)
+    def test_yql_with_3leg_auth_raises_typerror():
+        TestThreeLegged()
 
 def test_api_key_and_secret_attrs():
     y = yql.TwoLegged('test-api-key', 'test-secret')
