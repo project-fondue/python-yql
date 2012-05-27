@@ -91,22 +91,20 @@ class TestThreeLegged(yql.ThreeLegged):
 
 class StubbedRequestTestCase(TestCase):
     def setUp(self):
-        httplib2._Http = httplib2.Http
+        self._http = httplib2.Http
         httplib2.Http = RequestDataHttpReplacement
 
     def tearDown(self):
-        httplib2.Http = httplib2._Http
-        delattr(httplib2, '_Http')
+        httplib2.Http = self._http
 
 
 class StubbedFromFileTestCase(TestCase):
     def setUp(self):
-        httplib2._Http = httplib2.Http
+        self._http = httplib2.Http
         httplib2.Http = MyHttpReplacement
 
     def tearDown(self):
-        httplib2.Http = httplib2._Http
-        delattr(httplib2, '_Http')
+        httplib2.Http = self._http
 
 
 class PublicStubbedRequestTest(StubbedRequestTestCase):
