@@ -66,26 +66,6 @@ class RequestDataHttpReplacement:
         return uri, args, kwargs
 
 
-def set_up_http_from_file():
-    httplib2._Http = httplib2.Http
-    httplib2.Http = MyHttpReplacement
-
-
-def tear_down_http_from_file():
-    httplib2.Http = httplib2._Http
-    delattr(httplib2, '_Http')
-
-
-def set_up_http_request_data():
-    httplib2._Http = httplib2.Http
-    httplib2.Http = RequestDataHttpReplacement
-
-
-def tear_down_http_request_data():
-    httplib2.Http = httplib2._Http
-    delattr(httplib2, '_Http')
-
-
 def execute_return_uri(self, query, params=None, **kwargs):
     """A surrogate execute method that returns the uri"""
     return self.get_uri(query, params, **kwargs)
@@ -109,13 +89,27 @@ class TestThreeLegged(yql.ThreeLegged):
     execute = execute_return_uri
 
 
-class PublicStubbedRequestTest(TestCase):
+class StubbedRequestTestCase(TestCase):
     def setUp(self):
-        set_up_http_request_data()
+        httplib2._Http = httplib2.Http
+        httplib2.Http = RequestDataHttpReplacement
 
     def tearDown(self):
-        tear_down_http_request_data()
+        httplib2.Http = httplib2._Http
+        delattr(httplib2, '_Http')
 
+
+class StubbedFromFileTestCase(TestCase):
+    def setUp(self):
+        httplib2._Http = httplib2.Http
+        httplib2.Http = MyHttpReplacement
+
+    def tearDown(self):
+        httplib2.Http = httplib2._Http
+        delattr(httplib2, '_Http')
+
+
+class PublicStubbedRequestTest(StubbedRequestTestCase):
     def test_urlencoding_for_public_yql(self):
         query = 'SELECT * from foo'
         y = TestPublic(httplib2_inst=httplib2.Http())
@@ -135,13 +129,7 @@ class PublicStubbedRequestTest(TestCase):
         self.assertGreater(uri.find('dog=fifi'), -1)
 
 
-class PublicStubbedFromFileTest(TestCase):
-    def setUp(self):
-        set_up_http_from_file()
-
-    def tearDown(self):
-        tear_down_http_from_file()
-
+class PublicStubbedFromFileTest(StubbedFromFileTestCase):
     def test_json_response_from_file(self):
         query = 'SELECT * from foo WHERE dog=@dog'
         y = yql.Public(httplib2_inst=httplib2.Http())
@@ -183,13 +171,7 @@ class TwoLeggedTest(TestCase):
         self.assertEqual(request.get('test-param'), 'test')
 
 
-class TwoLeggedStubbedRequestTest(TestCase):
-    def setUp(self):
-        set_up_http_request_data()
-
-    def tearDown(self):
-        tear_down_http_request_data()
-
+class TwoLeggedStubbedRequestTest(StubbedRequestTestCase):
     def test_request_for_two_legged(self):
         query = 'SELECT * from foo'
         y = TestTwoLegged('test-api-key', 'test-secret', httplib2_inst=httplib2.Http())
@@ -199,13 +181,7 @@ class TwoLeggedStubbedRequestTest(TestCase):
         self.assertEqual(qs['format'], 'json')
 
 
-class TwoLeggedStubbedFromFileTest(TestCase):
-    def setUp(self):
-        set_up_http_from_file()
-
-    def tearDown(self):
-        tear_down_http_from_file()
-
+class TwoLeggedStubbedFromFileTest(StubbedFromFileTestCase):
     def test_get_two_legged_from_file(self):
         query = 'SELECT * from foo'
         y = yql.TwoLegged('test-api-key', 'test-secret', httplib2_inst=httplib2.Http())
@@ -236,13 +212,7 @@ class ThreeLeggedTest(TestCase):
         y.execute(query)
 
 
-class ThreeLeggedStubbedRequestTest(TestCase):
-    def setUp(self):
-        set_up_http_request_data()
-
-    def tearDown(self):
-        tear_down_http_request_data()
-
+class ThreeLeggedStubbedRequestTest(StubbedRequestTestCase):
     def test_request_for_three_legged(self):
         query = 'SELECT * from foo'
         y = TestThreeLegged('test-api-key', 'test-secret',
@@ -255,13 +225,7 @@ class ThreeLeggedStubbedRequestTest(TestCase):
         self.assertEqual(qs['format'], 'json')
 
 
-class ThreeLeggedStubbedFromFileTest(TestCase):
-    def setUp(self):
-        set_up_http_from_file()
-
-    def tearDown(self):
-        tear_down_http_from_file()
-
+class ThreeLeggedStubbedFromFileTest(StubbedFromFileTestCase):
     def test_three_legged_execution(self):
         query = 'SELECT * from foo WHERE dog=@dog'
         y = yql.ThreeLegged('test','test2', httplib2_inst=httplib2.Http())
@@ -284,4 +248,3 @@ class ThreeLeggedStubbedFromFileTest(TestCase):
         token = y.refresh_token(token=new_token)
         self.assertTrue(hasattr(token, 'key'))
         self.assertTrue(hasattr(token, 'secret'))
-
