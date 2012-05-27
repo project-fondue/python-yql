@@ -66,27 +66,22 @@ class RequestDataHttpReplacement:
         return uri, args, kwargs
 
 
-def execute_return_uri(self, query, params=None, **kwargs):
-    """A surrogate execute method that returns the uri"""
-    return self.get_uri(query, params, **kwargs)
-
-
 class TestPublic(yql.Public):
     """Subclass of YQL to allow returning of the request data"""
 
-    execute = execute_return_uri
+    execute = yql.Public.get_uri
 
 
 class TestTwoLegged(yql.TwoLegged):
     """Subclass of YQLTwoLegged to allow returning of the request data"""
 
-    execute = execute_return_uri
+    execute = yql.TwoLegged.get_uri
 
 
 class TestThreeLegged(yql.ThreeLegged):
     """Subclass of YQLTwoLegged to allow returning of the request data"""
 
-    execute = execute_return_uri
+    execute = yql.ThreeLegged.get_uri
 
 
 class StubbedHttpTestCase(TestCase):
