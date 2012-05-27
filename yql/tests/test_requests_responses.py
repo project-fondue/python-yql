@@ -53,6 +53,7 @@ class MyHttpReplacement(object):
     def add_credentials(self, name, password):
         pass
 
+
 class RequestDataHttpReplacement:
     """Create an httplib stub that returns request data"""
 
@@ -63,41 +64,51 @@ class RequestDataHttpReplacement:
         """return the request data"""
         return uri, args, kwargs
 
+
 def set_up_http_from_file():
     httplib2._Http = httplib2.Http
     httplib2.Http = MyHttpReplacement
+
 
 def tear_down_http_from_file():
     httplib2.Http = httplib2._Http
     delattr(httplib2, '_Http')
 
+
 def set_up_http_request_data():
     httplib2._Http = httplib2.Http
     httplib2.Http = RequestDataHttpReplacement
+
 
 def tear_down_http_request_data():
     httplib2.Http = httplib2._Http
     delattr(httplib2, '_Http')
 
+
 def execute_return_uri(self, query, params=None, **kwargs):
     """A surrogate execute method that returns the uri"""
     return self.get_uri(query, params, **kwargs)
+
 
 class TestPublic(yql.Public):
     """Subclass of YQL to allow returning of the request data"""
     pass
 
+
 class TestTwoLegged(yql.TwoLegged):
     """Subclass of YQLTwoLegged to allow returning of the request data"""
     pass
+
 
 class TestThreeLegged(yql.ThreeLegged):
     """Subclass of YQLTwoLegged to allow returning of the request data"""
     pass
 
+
 setattr(TestPublic, 'execute', execute_return_uri)
 setattr(TestTwoLegged, 'execute', execute_return_uri)
 setattr(TestThreeLegged, 'execute', execute_return_uri)
+
 
 @with_setup(set_up_http_request_data, tear_down_http_request_data)
 def test_urlencoding_for_public_yql():
