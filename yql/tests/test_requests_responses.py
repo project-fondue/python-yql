@@ -1,7 +1,8 @@
+from email import message_from_file
 import os
+from unittest import TestCase
 import urlparse
 from urllib import urlencode
-from email import message_from_file
 try:
     from urlparse import parse_qsl
 except ImportError:
@@ -108,26 +109,28 @@ class TestThreeLegged(yql.ThreeLegged):
     execute = execute_return_uri
 
 
-@with_setup(set_up_http_request_data, tear_down_http_request_data)
-def test_urlencoding_for_public_yql():
-    query = 'SELECT * from foo'
-    y = TestPublic(httplib2_inst=httplib2.Http())
-    uri = y.execute(query)
-    assert uri == "http://query.yahooapis.com/v1/public/yql?q=SELECT+%2A+from+foo&format=json"
+class PublicTest(TestCase):
+    @with_setup(set_up_http_request_data, tear_down_http_request_data)
+    def test_urlencoding_for_public_yql(self):
+        query = 'SELECT * from foo'
+        y = TestPublic(httplib2_inst=httplib2.Http())
+        uri = y.execute(query)
+        self.assertEqual(uri, "http://query.yahooapis.com/v1/public/yql?q=SELECT+%2A+from+foo&format=json")
 
-@with_setup(set_up_http_request_data, tear_down_http_request_data)
-def test_env_for_public_yql():
-    query = 'SELECT * from foo'
-    y = TestPublic(httplib2_inst=httplib2.Http())
-    uri = y.execute(query, env="http://foo.com")
-    assert uri.find(urlencode({"env":"http://foo.com"})) > -1
+    @with_setup(set_up_http_request_data, tear_down_http_request_data)
+    def test_env_for_public_yql(self):
+        query = 'SELECT * from foo'
+        y = TestPublic(httplib2_inst=httplib2.Http())
+        uri = y.execute(query, env="http://foo.com")
+        self.assertGreater(uri.find(urlencode({"env":"http://foo.com"})), -1)
 
-@with_setup(set_up_http_request_data, tear_down_http_request_data)
-def test_name_param_inserted_for_public_yql():
-    query = 'SELECT * from foo WHERE dog=@dog'
-    y = TestPublic(httplib2_inst=httplib2.Http())
-    uri = y.execute(query, {"dog": "fifi"})
-    assert uri.find('dog=fifi') > -1
+    @with_setup(set_up_http_request_data, tear_down_http_request_data)
+    def test_name_param_inserted_for_public_yql(self):
+        query = 'SELECT * from foo WHERE dog=@dog'
+        y = TestPublic(httplib2_inst=httplib2.Http())
+        uri = y.execute(query, {"dog": "fifi"})
+        self.assertGreater(uri.find('dog=fifi'), -1)
+
 
 @raises(TypeError)
 def test_yql_with_2leg_auth_raises_typerror():
