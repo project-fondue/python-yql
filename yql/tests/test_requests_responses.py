@@ -64,16 +64,16 @@ class RequestDataHttpReplacement:
         return uri, args, kwargs
 
 def set_up_http_from_file():
-    httplib2.Http = MyHttpReplacement
     httplib2._Http = httplib2.Http
+    httplib2.Http = MyHttpReplacement
 
 def tear_down_http_from_file():
     httplib2.Http = httplib2._Http
     delattr(httplib2, '_Http')
 
 def set_up_http_request_data():
-    httplib2.Http = RequestDataHttpReplacement
     httplib2._Http = httplib2.Http
+    httplib2.Http = RequestDataHttpReplacement
 
 def tear_down_http_request_data():
     httplib2.Http = httplib2._Http
