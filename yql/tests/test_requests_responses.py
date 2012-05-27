@@ -19,7 +19,7 @@ import yql
 HTTP_SRC_DIR = os.path.join(os.path.dirname(__file__), "http_src/")
 
 
-class MyHttpReplacement(object):
+class FileDataHttpReplacement(object):
     """Build a stand-in for httplib2.Http that takes its
     response headers and bodies from files on disk
 
@@ -118,7 +118,7 @@ class PublicStubbedRequestTest(StubbedHttpTestCase):
 
 
 class PublicStubbedFromFileTest(StubbedHttpTestCase):
-    stub =  MyHttpReplacement
+    stub =  FileDataHttpReplacement
 
     def test_json_response_from_file(self):
         query = 'SELECT * from foo WHERE dog=@dog'
@@ -174,7 +174,7 @@ class TwoLeggedStubbedRequestTest(StubbedHttpTestCase):
 
 
 class TwoLeggedStubbedFromFileTest(StubbedHttpTestCase):
-    stub =  MyHttpReplacement
+    stub =  FileDataHttpReplacement
 
     def test_get_two_legged_from_file(self):
         query = 'SELECT * from foo'
@@ -222,7 +222,7 @@ class ThreeLeggedStubbedRequestTest(StubbedHttpTestCase):
 
 
 class ThreeLeggedStubbedFromFileTest(StubbedHttpTestCase):
-    stub =  MyHttpReplacement
+    stub =  FileDataHttpReplacement
 
     def test_three_legged_execution(self):
         query = 'SELECT * from foo WHERE dog=@dog'
