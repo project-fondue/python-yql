@@ -28,6 +28,5 @@ You can also get a tarball from PyPi with:
 Getting the source
 ==================
 
-.. sourcecode:: sh
-    
-    bzr branch lp:python-yql
+Branches are available at `github <https://github.com/project-fondue/python-yql>`_
+
