@@ -11,7 +11,9 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
+import sys
+from datetime import datetime
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -19,7 +21,7 @@ import sys, os
 sys.path.insert(0, os.path.abspath('../../'))
 sys.path.insert(0, os.path.abspath('../../yql/'))
 
-from yql import __version__ as VERSION 
+from yql import __version__ as VERSION
 
 # -- General configuration -----------------------------------------------------
 
@@ -41,7 +43,9 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Python YQL'
-copyright = u'2009, Stuart Colville'
+copyright = u'2009-%s, <a href="http://muffinresearch.co.uk">Stuart Colville</a> '\
+             'and the <a href="http://projectfondue.com/">Project Fondue '\
+             'Team</a>' % datetime.now().year
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -102,7 +106,7 @@ html_theme = 'pythonyql'
 #html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = ['../themes']
+html_theme_path = ['../themes/']
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -118,7 +122,7 @@ html_logo = "_static/python-yql.png"
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = "_static/favicon.ico" 
+html_favicon = "_static/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
