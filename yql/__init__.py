@@ -29,7 +29,7 @@ except ImportError: # pragma: no cover
 
 
 __author__ = 'Stuart Colville'
-__version__ = '0.7.4'
+__version__ = '0.7.5'
 __all__ = ['Public', 'TwoLegged', 'ThreeLegged']
 
 
