@@ -16,7 +16,13 @@ Installation
 
 ::
 
-    sudo easy_install yql
+    pip install yql
+
+or 
+
+::
+
+    easy_install yql
 
 Usage
 =====
