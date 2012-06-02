@@ -20,7 +20,7 @@ body {
     color: #fff;
 }
 .header_wrapper {
-    background: url(bp-bck.png) 0 0 repeat;
+    background: #325286 url(bp-bck.png) 0 0 repeat;
 }
 #header {
     height: 152x;
@@ -43,6 +43,13 @@ body {
 p.logo {
     margin: 0;
     height: 156px;
+}
+.github-ribbon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    border: 0;
+    z-index: 10;
 }
 div.clearer {
     clear: both;
