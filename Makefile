@@ -7,7 +7,7 @@ watch-docs:
 	--ignore-pattern='*build*' --recursive \
 	--command='make docs' docs
 
-.PHONY: docs
+.PHONY: docs, watch-docs
 
 .NOTPARALLEL:
 
