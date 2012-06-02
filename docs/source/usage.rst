@@ -266,3 +266,8 @@ As of version 0.5 logging has been made available. It's off by default, however 
 * YQL_LOGGING_LEVEL - Should be one of 'debug', 'info', 'warning', 'error', 'critical'.
 
 For debugging setting the level to "debug" will provide the most insight into what's happening.
+
+Using Python-yql in Google App Engine                                                                                                          
+======================================                                                                                                         
+As of version 0.7.4 we've deprecated support for Python 2.5. as a result of this change if you're using python-yql under GAE you'll need to use the python 2.7 runtime. See https://developers.google.com/appengine/docs/python/runtime for more information.
+
