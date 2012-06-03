@@ -1,4 +1,5 @@
 from email import message_from_file
+import json
 import os
 from unittest import TestCase
 import urlparse
@@ -93,6 +94,55 @@ class StubbedHttpTestCase(TestCase):
 
     def tearDown(self):
         httplib2.Http = self._http
+
+
+class StubHttp(object):
+    def __init__(self, request_callback):
+        self.request_callback = request_callback
+
+    def request(self, *args, **kwargs):
+        return self.request_callback(*args, **kwargs)
+
+
+class PublicTest(TestCase):
+    def test_sends_content_type_and_serialized_data_on_delete(self):
+        query = 'DELETE * from foo'
+        expected_data = 'some data'
+
+        def request(url, http_method, headers, body):
+            self.assertEqual(headers, {"Content-Type": "application/json"})
+            self.assertEqual(body, json.dumps({'q': query}))
+            return {'status': '200'}, json.dumps({'query': expected_data})
+
+        y = yql.Public(httplib2_inst=StubHttp(request_callback=request))
+        y_obj = y.execute(query)
+        self.assertEqual(y_obj.raw, expected_data)
+
+    def test_sends_content_type_and_serialized_data_on_insert(self):
+        query = 'INSERT * into foo'
+        expected_data = 'some data'
+
+        def request(url, http_method, headers, body):
+            self.assertEqual(headers, {"Content-Type": "application/json"})
+            self.assertEqual(body, json.dumps({'q': query}))
+            return {'status': '200'}, json.dumps({'query': expected_data})
+
+        y = yql.Public(httplib2_inst=StubHttp(request_callback=request))
+        y_obj = y.execute(query)
+        self.assertEqual(y_obj.raw, expected_data)
+
+    def test_sends_content_type_and_serialized_data_on_update(self):
+        query = 'UPDATE foo'
+        expected_data = 'some data'
+
+        def request(url, http_method, headers, body):
+            self.assertEqual(headers, {"Content-Type": "application/json"})
+            self.assertEqual(body, json.dumps({'q': query}))
+            return {'status': '200'}, json.dumps({'query': expected_data})
+
+        y = yql.Public(httplib2_inst=StubHttp(request_callback=request))
+        y_obj = y.execute(query)
+        self.assertEqual(y_obj.raw, expected_data)
 
 
 class PublicStubbedRequestTest(StubbedHttpTestCase):
