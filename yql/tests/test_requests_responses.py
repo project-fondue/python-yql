@@ -144,6 +144,17 @@ class PublicTest(TestCase):
         y_obj = y.execute(query)
         self.assertEqual(y_obj.raw, expected_data)
 
+    @raises(yql.YQLError)
+    def test_raises_error_if_status_is_not_200(self):
+        query = 'UPDATE foo'
+        expected_data = 'some data'
+
+        def request(url, http_method, headers, body):
+            return {'status': '500'}, json.dumps({'query': expected_data})
+
+        y = yql.Public(httplib2_inst=StubHttp(request_callback=request))
+        y_obj = y.execute(query)
+
 
 class PublicStubbedRequestTest(StubbedHttpTestCase):
     stub =  RequestDataHttpReplacement
