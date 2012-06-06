@@ -73,7 +73,19 @@ To access one result when you know you only have one result use the one() method
     >>> result.one()
     {u'isfamily': u'0', u'title': u'Panda can has fruit', u'farm': u'3', u'ispublic': u'1', u'server': u'2605', u'isfriend': u'0', u'secret': u'62ccb5d94e', u'owner': u'99045337@N00', u'id': u'4135649462'}
 
-If there's more than one result NotOneError will be raised.
+If there's more than one result NotOneError will be raised:
+
+.. sourcecode:: python
+
+    >>> res = y.execute("select * from upcoming.events where woeid in (select woeid from geo.places where text='North Beach')")
+    >>> res.count
+    2
+    >>> res.one()
+    Traceback (most recent call last):
+      File "<input>", line 1, in <module>
+      File "yql/__init__.py", line 88, in one
+        raise NotOneError, "More than one result"
+    NotOneError: More than one result
 
 If at any point you want to access the raw data you can use the :attr:`YQLObj.raw` property to access the full dataset as converted from JSON.
 
@@ -109,7 +121,7 @@ Here's an example of using Two-legged authentication in Python YQL.
     import yql 
     
     y = yql.TwoLegged(API_KEY, SHARED_SECRET)
-    y.execute("select * from flickr.photos.search where text='panda' and api_key="INSERT_API_KEY_HERE" limit 3")
+    y.execute("select * from flickr.photos.search where text='panda' and api_key='INSERT_API_KEY_HERE' limit 3")
 
 
 Three-legged Auth
