@@ -30,3 +30,8 @@ Getting the source
 
 Branches are available at `github <https://github.com/project-fondue/python-yql>`_
 
+
+Python requirements
+==================
+
+python-yql currently runs on Python 2.6 and 2.7. We plan to support Python 3.x in a near future.
