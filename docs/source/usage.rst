@@ -4,7 +4,7 @@ Usage
 
 .. currentmodule:: yql
 
-There are three different ways to use YQL. The public endpoint can be used to query public tables. Oauth is used to provide access to the private endpoint which uses both two-legged and three-legged oauth. 
+There are three different ways to use YQL. The public endpoint can be used to query public tables. Oauth is used to provide access to the private endpoint which uses both two-legged and three-legged oauth.
 
 First let's take a look at how we can access the data returned from a query. After that we'll look at differences between the Public and Private endpoints.
 
@@ -45,21 +45,21 @@ The YQL object provides a simple interface for getting at the data. To illustrat
 For the most part it will make sense to use the :attr:`YQLObj.rows` property to access your data as this returns a list of the results. This makes looping over the results as easy as:
 
 .. sourcecode:: python
-    
+
     >>> result = y.execute('select * from flickr.photos.search where text="panda" and api_key=INSERT_API_KEY_HERE" limit 3')
     >>> result.rows
     [{u'isfamily': u'0', u'title': u'Panda can has fruit', u'farm': u'3', u'ispublic': u'1', u'server': u'2605', u'isfriend': u'0', u'secret': u'62ccb5d94e', u'owner': u'99045337@N00', u'id': u'4135649462'}, {u'isfamily': u'0', u'title': u'Hey Panda', u'farm': u'3', u'ispublic': u'1', u'server': u'2799', u'isfriend': u'0', u'secret': u'1632cb8ab8', u'owner': u'99045337@N00', u'id': u'4134889385'}, {u'isfamily': u'0', u'title': u'Panda Lin Hui', u'farm': u'3', u'ispublic': u'1', u'server': u'2737', u'isfriend': u'0', u'secret': u'099b30a0a4', u'owner': u'37843112@N07', u'id': u'4135631774'}]
     >>> for row in result.rows:
     ...     print row.get('title')
-    ... 
+    ...
     Panda can has fruit
     Hey Panda
     Panda Lin Hui
-    >>> 
+    >>>
 
 
 .. note::
-    
+
 
     In version 0.6 this was changed so that if only one row is returned it's still a list so that iterating over the rows is more robust. Prior to version 0.6 results.rows would contain the content of the data.
 
@@ -118,8 +118,8 @@ Here's an example of using Two-legged authentication in Python YQL.
 
 .. sourcecode:: python
 
-    import yql 
-    
+    import yql
+
     y = yql.TwoLegged(API_KEY, SHARED_SECRET)
     y.execute("select * from flickr.photos.search where text='panda' and api_key='INSERT_API_KEY_HERE' limit 3")
 
@@ -135,22 +135,22 @@ Here's an example:
 .. sourcecode:: python
 
     import yql
-    
+
     y3 = yql.ThreeLegged(API_KEY, SECRET)
     query = 'select * from social.connections where owner_guid=me'
-    
+
     request_token, auth_url = y3.get_token_and_auth_url()
-    
+
     # -- USER AUTHENTICATES HERE --
-    
+
     access_token = y3.get_access_token(request_token, verifier)
-    y3.execute(query, token=access_token) 
+    y3.execute(query, token=access_token)
 
 
 .. currentmodule:: yql.ThreeLegged
 
 In the example above the first call made uses the method :meth:`get_token_and_auth_url`. This returns a tuple containing the request token and an authentication url. It's up to the implentation to then send or prompt the user to visit that authenication url in order to login to Yahoo.
-    
+
 If a callback was specified in the :meth:`get_token_and_auth_url` method then your user will be sent to that url when they login. The url will automatically be sent the "verifier" string to use in the "get_access_token" method.
 
 If no callback was specified or was explicitly marked as 'oob' (the default value) then the user will be shown a verfier code which they will have to provide to your application.
@@ -173,7 +173,7 @@ Here's an example:
 .. sourcecode:: python
 
     import yql
-    from yql.storage import FileTokenStore 
+    from yql.storage import FileTokenStore
 
     y3 = yql.ThreeLegged(API_KEY, SECRET)
 
@@ -196,8 +196,8 @@ Here's an example:
         token = y3.check_token(stored_token)
         if token != stored_token:
             token_store.set('foo', token)
-    
-    print y3.execute(query, token=token) 
+
+    print y3.execute(query, token=token)
 
 
 This example shows a way to do the initial dance including authentication. The access token provided is then stashed away in a file for re-use on subsequent calls. When re-used the :meth:`check_token` method is used to check if the token needs refreshing. If it's over an hour old the token is refreshed and returned.
@@ -205,21 +205,21 @@ This example shows a way to do the initial dance including authentication. The a
 The Storage classes are designed to be extended as necessary so that the user can implement a different backend for storing tokens for re-use. An example would be to use memcache for storage. To create a new storage class all that's needed is to subclass :class:`yql.storage.BaseTokenStorage`.
 
 .. note::
-    
+
     It's worth bearing in mind that :class:`yql.storage.FileTokenStorage` at this point in time, is not intended for heavy duty production use and it's recommended to create a subclass tailored to your own needs.
 
 
 Other YQL Features
 ==================
 
-Here's some details on other YQL features that are supported by Python-yql. 
+Here's some details on other YQL features that are supported by Python-yql.
 
 Using data tables with environment files
 ----------------------------------------
 
-YQL has feature that enables an externally hosted environment file to be used to import open tables for use with your app. 
+YQL has feature that enables an externally hosted environment file to be used to import open tables for use with your app.
 
-See the YQL documentation here: `YQL opentables environment <http://developer.yahoo.com/yql/guide/yql-opentables-import.html#yql-opentables-import-environment>_`
+See the YQL documentation here: `YQL opentables environment <http://developer.yahoo.com/yql/guide/yql-opentables-import.html#yql-opentables-import-environment>`_
 
 To use this feature create and host your environment file and then use it like so:
 
@@ -235,7 +235,7 @@ To use this feature create and host your environment file and then use it like s
 Using Placeholders in Queries
 -----------------------------
 
-This example uses the optional query placeholders which are strings prefixed with ``@`` which are substitutued by dictionary items whose keys match the placeholder. 
+This example uses the optional query placeholders which are strings prefixed with ``@`` which are substitutued by dictionary items whose keys match the placeholder.
 
 .. note::
 
@@ -261,8 +261,8 @@ Here's an example of an INSERT using the bit.ly table:
 
 .. sourcecode:: python
 
-        query = """USE 'http://yqlblog.net/samples/bitly.shorten.xml'; 
-                   insert into bitly.shorten(login, apiKey, longUrl) 
+        query = """USE 'http://yqlblog.net/samples/bitly.shorten.xml';
+                   insert into bitly.shorten(login, apiKey, longUrl)
                    values('%s','%s','http://yahoo.com')""" % (
                                             BITLY_USER, BITLY_API_KEY)
         y = yql.Public()
@@ -279,7 +279,6 @@ As of version 0.5 logging has been made available. It's off by default, however 
 
 For debugging setting the level to "debug" will provide the most insight into what's happening.
 
-Using Python-yql in Google App Engine                                                                                                          
-======================================                                                                                                         
-As of version 0.7.4 we've deprecated support for Python 2.5. as a result of this change if you're using python-yql under GAE you'll need to use the python 2.7 runtime. See https://developers.google.com/appengine/docs/python/runtime for more information.
-
+Using python-yql in Google App Engine
+======================================
+As of version 0.7.4 we've deprecated support for Python 2.5. As a result of this change if you're using python-yql under GAE you'll need to use the python 2.7 runtime. See https://developers.google.com/appengine/docs/python/runtime for more information.
