@@ -187,6 +187,69 @@ class NotOneError(Exception):
         return self.message
 
 
+class YQLQuery(object):
+    """A YQL Query class that can be used to inspect and validate a query"""
+
+    def __init__(self, query):
+        self.query = clean_query(query)
+
+    def __str__(self):
+        """Return the query"""
+        return self.query
+
+    def get_http_method(self):
+        """Return the HTTP method associated with the type of this query"""
+        return get_http_method(self.query)
+
+    def get_query_params(self, params, **kwargs):
+        """Get the query params and validate placeholders"""
+        query_params = {}
+        keys_from_query = self.get_placeholder_keys()
+
+        if keys_from_query and not params or (
+                                     params and not hasattr(params, 'get')):
+
+            raise ValueError, "If you are using placeholders a dictionary "\
+                                                "of substitutions is required"
+
+        elif not keys_from_query and params and hasattr(params, 'get'):
+            raise ValueError, "You supplied a dictionary of substitutions "\
+                                "but the query doesn't have any placeholders"
+
+        elif keys_from_query and params:
+            keys_from_params = params.keys()
+
+            if set(keys_from_query) != set(keys_from_params):
+                raise ValueError, "Parameter keys don't match the query "\
+                                                                "placeholders"
+            else:
+                query_params.update(params)
+
+        query_params['q'] = self.query
+        query_params['format'] = 'json'
+
+        env = kwargs.get('env')
+        if env:
+            query_params['env'] = env
+
+        return query_params
+
+    def get_placeholder_keys(self):
+        """Gets the @var placeholders
+
+        http://developer.yahoo.com/yql/guide/var_substitution.html
+
+        """
+        result = []
+        for match in  QUERY_PLACEHOLDER.finditer(self.query):
+            result.append(match.group('param'))
+
+        if result:
+            yql_logger.debug("placeholder_keys: %s", result)
+
+        return result
+
+
 class Public(object):
     """Class for making public YQL queries"""
 
@@ -222,59 +285,11 @@ class Public(object):
         else:
             raise ValueError, "Invalid endpoint: %s" % value
 
-
-    def get_query_params(self, query, params, **kwargs):
-        """Get the query params and validate placeholders"""
-        query_params = {}
-        keys_from_query = self.get_placeholder_keys(query)
-
-        if keys_from_query and not params or (
-                                     params and not hasattr(params, 'get')):
-
-            raise ValueError, "If you are using placeholders a dictionary "\
-                                                "of substitutions is required"
-
-        elif not keys_from_query and params and hasattr(params, 'get'):
-            raise ValueError, "You supplied a dictionary of substitutions "\
-                                "but the query doesn't have any placeholders"
-
-        elif keys_from_query and params:
-            keys_from_params = params.keys()
-
-            if set(keys_from_query) != set(keys_from_params):
-                raise ValueError, "Parameter keys don't match the query "\
-                                                                "placeholders"
-            else:
-                query_params.update(params)
-
-        query_params['q'] = query
-        query_params['format'] = 'json'
-
-        env = kwargs.get('env')
-        if env:
-            query_params['env'] = env
-
-        return query_params
-
-    @staticmethod
-    def get_placeholder_keys(query):
-        """Gets the @var placeholders
-
-        http://developer.yahoo.com/yql/guide/var_substitution.html
-
-        """
-        result = []
-        for match in  QUERY_PLACEHOLDER.finditer(query):
-            result.append(match.group('param'))
-
-        if result:
-            yql_logger.debug("placeholder_keys: %s", result)
-
-        return result
-
     def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
-        params = self.get_query_params(query, params, **kwargs)
+        if isinstance(query, basestring):
+            query = YQLQuery(query)
+        params = query.get_query_params(params, **kwargs)
         query_string = urlencode(params)
         uri =  '%s?%s' % (self.uri, query_string)
         uri = clean_url(uri)
@@ -282,14 +297,14 @@ class Public(object):
 
     def execute(self, query, params=None, **kwargs):
         """Execute YQL query"""
-        query = clean_query(query)
-        url = self.get_uri(query, params, **kwargs)
+        yqlquery = YQLQuery(query)
+        url = self.get_uri(yqlquery, params, **kwargs)
         # Just in time change to https avoids
         # invalid oauth sigs
         if self.scheme == HTTPS_SCHEME:
             url = url.replace(HTTP_SCHEME, HTTPS_SCHEME)
         yql_logger.debug("executed url: %s", url)
-        http_method = get_http_method(query)
+        http_method = yqlquery.get_http_method()
         if http_method in ["DELETE", "PUT", "POST"]:
             data = {"q": query}
 
@@ -355,9 +370,11 @@ class TwoLegged(Public):
 
     def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
-        query_params = self.get_query_params(query, params, **kwargs)
+        if isinstance(query, basestring):
+            query = YQLQuery(query)
+        query_params = query.get_query_params(params, **kwargs)
 
-        http_method = get_http_method(query)
+        http_method = query.get_http_method()
         request = self.__two_legged_request(self.uri,
                        parameters=query_params, method=http_method)
         uri = "%s?%s" % (self.uri, request.to_postdata())
@@ -541,7 +558,9 @@ class ThreeLegged(TwoLegged):
 
     def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
-        query_params = self.get_query_params(query, params, **kwargs)
+        if isinstance(query,basestring):
+            query = YQLQuery(query)
+        query_params = query.get_query_params(params, **kwargs)
 
         token = kwargs.get("token")
 
@@ -553,7 +572,7 @@ class ThreeLegged(TwoLegged):
                                                               " carried out"
 
         yql_logger.debug("query_params: %s", query_params)
-        http_method = get_http_method(query)
+        http_method = query.get_http_method()
         oauth_request = oauth.Request.from_consumer_and_token(
                                         self.consumer, http_url=self.uri,
                                         token=token, parameters=query_params,

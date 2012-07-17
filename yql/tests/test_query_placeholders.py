@@ -44,34 +44,29 @@ class PublicTest(TestCase):
         y.execute(query, params)
 
     def test_placeholder_regex_one(self):
-        y = yql.Public()
-        query = "SELECT * from foo where email='foo@foo.com'"
-        placeholders = y.get_placeholder_keys(query)
+        query = yql.YQLQuery("SELECT * from foo where email='foo@foo.com'")
+        placeholders = query.get_placeholder_keys()
         self.assertEqual(placeholders, [])
 
     def test_placeholder_regex_two(self):
-        y = yql.Public()
-        query = "SELECT * from foo where email=@foo'"
-        placeholders = y.get_placeholder_keys(query)
+        query = yql.YQLQuery("SELECT * from foo where email=@foo'")
+        placeholders = query.get_placeholder_keys()
         self.assertEqual(placeholders, ['foo'])
 
     def test_placeholder_regex_three(self):
-        y = yql.Public()
-        query = "SELECT * from foo where email=@foo and test=@bar'"
-        placeholders = y.get_placeholder_keys(query)
+        query = yql.YQLQuery("SELECT * from foo where email=@foo and test=@bar'")
+        placeholders = query.get_placeholder_keys()
         self.assertEqual(placeholders, ['foo', 'bar'])
 
     def test_placeholder_regex_four(self):
-        y = yql.Public()
-        query = "SELECT * from foo where foo='bar' LIMIT @foo"
-        placeholders = y.get_placeholder_keys(query)
+        query = yql.YQLQuery("SELECT * from foo where foo='bar' LIMIT @foo")
+        placeholders = query.get_placeholder_keys()
         self.assertEqual(placeholders, ['foo'])
 
     def test_placeholder_regex_five(self):
-        y = yql.Public()
-        query = """SELECT * from foo
+        query = yql.YQLQuery("""SELECT * from foo
                     where foo='bar' LIMIT
-                    @foo"""
-        placeholders = y.get_placeholder_keys(query)
+                    @foo""")
+        placeholders = query.get_placeholder_keys()
         self.assertEqual(placeholders, ['foo'])
 
