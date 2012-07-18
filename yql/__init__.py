@@ -213,20 +213,6 @@ class YQLQuery(object):
             yql_logger.debug("placeholder_keys: %s", result)
         return result
 
-    def get_query_params(self, params, **kwargs):
-        """Get the query params and validate placeholders"""
-        query_params = {}
-        if self.validate(params) and params:
-            query_params.update(params)
-        query_params['q'] = self.query
-        query_params['format'] = 'json'
-
-        env = kwargs.get('env')
-        if env:
-            query_params['env'] = env
-
-        return query_params
-
     def validate(self, substitutions=None):
         """Validate the query placeholders"""
         placeholders = set(self.get_placeholder_keys())
@@ -282,11 +268,25 @@ class Public(object):
         else:
             raise ValueError, "Invalid endpoint: %s" % value
 
+    def get_query_params(self, query, params, **kwargs):
+        """Get the query params and validate placeholders"""
+        query_params = {}
+        if query.validate(params) and params:
+            query_params.update(params)
+        query_params['q'] = query.query
+        query_params['format'] = 'json'
+
+        env = kwargs.get('env')
+        if env:
+            query_params['env'] = env
+
+        return query_params
+
     def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
         if isinstance(query, basestring):
             query = YQLQuery(query)
-        params = query.get_query_params(params, **kwargs)
+        params = self.get_query_params(query, params, **kwargs)
         query_string = urlencode(params)
         uri =  '%s?%s' % (self.uri, query_string)
         uri = clean_url(uri)
@@ -369,8 +369,7 @@ class TwoLegged(Public):
         """Get the the request url"""
         if isinstance(query, basestring):
             query = YQLQuery(query)
-        query_params = query.get_query_params(params, **kwargs)
-
+        query_params = self.get_query_params(query, params, **kwargs)
         http_method = query.get_http_method()
         request = self.__two_legged_request(self.uri,
                        parameters=query_params, method=http_method)
@@ -555,9 +554,9 @@ class ThreeLegged(TwoLegged):
 
     def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
-        if isinstance(query,basestring):
+        if isinstance(query, basestring):
             query = YQLQuery(query)
-        query_params = query.get_query_params(params, **kwargs)
+        query_params = self.get_query_params(query, params, **kwargs)
 
         token = kwargs.get("token")
 
