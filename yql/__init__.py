@@ -188,7 +188,7 @@ class NotOneError(Exception):
 
 
 class YQLQuery(object):
-    """A YQL Query class that can be used to inspect and validate a query"""
+    """A YQL Query class used to inspect and validate a query"""
 
     def __init__(self, query):
         self.query = clean_query(query)
@@ -201,30 +201,23 @@ class YQLQuery(object):
         """Return the HTTP method associated with the type of this query"""
         return get_http_method(self.query)
 
+    def get_placeholder_keys(self):
+        """Gets the @var placeholders
+
+        http://developer.yahoo.com/yql/guide/var_substitution.html
+        """
+        result = []
+        for match in  QUERY_PLACEHOLDER.finditer(self.query):
+            result.append(match.group('param'))
+        if result:
+            yql_logger.debug("placeholder_keys: %s", result)
+        return result
+
     def get_query_params(self, params, **kwargs):
         """Get the query params and validate placeholders"""
         query_params = {}
-        keys_from_query = self.get_placeholder_keys()
-
-        if keys_from_query and not params or (
-                                     params and not hasattr(params, 'get')):
-
-            raise ValueError, "If you are using placeholders a dictionary "\
-                                                "of substitutions is required"
-
-        elif not keys_from_query and params and hasattr(params, 'get'):
-            raise ValueError, "You supplied a dictionary of substitutions "\
-                                "but the query doesn't have any placeholders"
-
-        elif keys_from_query and params:
-            keys_from_params = params.keys()
-
-            if set(keys_from_query) != set(keys_from_params):
-                raise ValueError, "Parameter keys don't match the query "\
-                                                                "placeholders"
-            else:
-                query_params.update(params)
-
+        if self.validate(params) and params:
+            query_params.update(params)
         query_params['q'] = self.query
         query_params['format'] = 'json'
 
@@ -234,20 +227,24 @@ class YQLQuery(object):
 
         return query_params
 
-    def get_placeholder_keys(self):
-        """Gets the @var placeholders
-
-        http://developer.yahoo.com/yql/guide/var_substitution.html
-
-        """
-        result = []
-        for match in  QUERY_PLACEHOLDER.finditer(self.query):
-            result.append(match.group('param'))
-
-        if result:
-            yql_logger.debug("placeholder_keys: %s", result)
-
-        return result
+    def validate(self, substitutions=None):
+        """Validate the query placeholders"""
+        placeholders = set(self.get_placeholder_keys())
+        if not substitutions is None:
+            if hasattr(substitutions, 'keys'):
+                if not placeholders:
+                    raise ValueError("Got a dictionary of substitutions but "
+                                     "the query doesn't have any placeholders")
+                elif set(placeholders) != set(substitutions.keys()):
+                    raise ValueError("Substitution keys don't match "
+                                     "the placeholders")
+            else:
+                raise ValueError("Substitutions must be a dictionary.")
+        else:
+            if placeholders:
+                raise ValueError("Query uses placeholders so a dictionary "
+                                 "of substitutions is required")
+        return True
 
 
 class Public(object):
