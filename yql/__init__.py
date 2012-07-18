@@ -24,7 +24,7 @@ import oauth2 as oauth
 
 try:
     from urlparse import parse_qs, parse_qsl
-except ImportError: # pragma: no cover
+except ImportError:  # pragma: no cover
     from cgi import parse_qs, parse_qsl
 
 
@@ -85,7 +85,7 @@ class YQLObj(object):
         """Return just one result directly."""
         rows = self.rows
         if len(rows) > 1:
-            raise NotOneError, "More than one result"
+            raise NotOneError("More than one result")
         else:
             return rows[0]
 
@@ -133,11 +133,11 @@ class YQLObj(object):
         """The query diagnostics"""
         return self._raw.get('diagnostics')
 
-    def pprint_raw(self, indent=4): # pragma: no cover
+    def pprint_raw(self, indent=4):  # pragma: no cover
         """Pretty print the raw data"""
         pprint.pprint(self._raw, indent=indent)
 
-    def pformat_raw(self, indent=4): # pragma: no cover
+    def pformat_raw(self, indent=4):  # pragma: no cover
         """Pretty format the raw data"""
         return pprint.pformat(self._raw, indent=indent)
 
@@ -266,7 +266,7 @@ class Public(object):
             self.__endpoint = value
             self.uri = self.get_endpoint_uri()
         else:
-            raise ValueError, "Invalid endpoint: %s" % value
+            raise ValueError("Invalid endpoint: %s" % value)
 
     def get_query_params(self, query, params, **kwargs):
         """Get the query params and validate placeholders"""
@@ -288,7 +288,7 @@ class Public(object):
             query = YQLQuery(query)
         params = self.get_query_params(query, params, **kwargs)
         query_string = urlencode(params)
-        uri =  '%s?%s' % (self.uri, query_string)
+        uri = '%s?%s' % (self.uri, query_string)
         uri = clean_url(uri)
         return uri
 
@@ -319,7 +319,7 @@ class Public(object):
         if resp.get('status') == '200':
             return YQLObj(json.loads(content))
         else:
-            raise YQLError, (resp, content)
+            raise YQLError(resp, content)
 
     endpoint = property(get_endpoint, set_endpoint)
 
@@ -345,7 +345,6 @@ class TwoLegged(Public):
         params['oauth_timestamp'] = int(time.time())
         return params
 
-
     def __two_legged_request(self, resource_url, parameters=None, method=None):
         """Sign a request for two-legged authentication"""
 
@@ -363,7 +362,6 @@ class TwoLegged(Public):
                                                         parameters=params)
         request.sign_request(self.hmac_sha1_signature, consumer, None)
         return request
-
 
     def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
@@ -447,8 +445,7 @@ class ThreeLegged(TwoLegged):
             yql_logger.debug("data: %s", data)
             return token, data['xoauth_request_auth_url']
         else:
-            raise YQLError, (resp, content, url)
-
+            raise YQLError(resp, content, url)
 
     def get_access_token(self, token, verifier):
 
@@ -496,20 +493,18 @@ class ThreeLegged(TwoLegged):
             access_token.timestamp = oauth_request['oauth_timestamp']
             return access_token
         else:
-            raise YQLError, (resp, content, url)
-
+            raise YQLError(resp, content, url)
 
     def check_token(self, token):
         """Check to see if a token has expired"""
 
         if not hasattr(token, 'timestamp'):
-            raise AttributeError, 'token doesn\'t have a timestamp attrbute'
+            raise AttributeError('token doesn\'t have a timestamp attribute')
 
         if (int(token.timestamp) + 3600) < time.time():
             token = self.refresh_token(token)
 
         return token
-
 
     def refresh_token(self, token):
         """Access Tokens only last for one hour from the point of being issued.
@@ -550,7 +545,7 @@ class ThreeLegged(TwoLegged):
             access_token.timestamp = oauth_request['oauth_timestamp']
             return access_token
         else:
-            raise YQLError, (resp, content, url)
+            raise YQLError(resp, content, url)
 
     def get_uri(self, query, params=None, **kwargs):
         """Get the the request url"""
@@ -564,8 +559,8 @@ class ThreeLegged(TwoLegged):
             query_params["oauth_yahoo_guid"] = getattr(token, "yahoo_guid")
 
         if not token:
-            raise ValueError, "Without a token three-legged-auth cannot be"\
-                                                              " carried out"
+            raise ValueError("Without a token three-legged-auth cannot be"\
+                                                              " carried out")
 
         yql_logger.debug("query_params: %s", query_params)
         http_method = query.get_http_method()
@@ -626,10 +621,9 @@ class YahooToken(oauth.Token):
         try:
             token.callback_confirmed = params['oauth_callback_confirmed'][0]
         except KeyError:
-            pass # 1.0, no callback confirmed.
+            pass  # 1.0, no callback confirmed.
 
         return token
-
 
     def to_string(self):
         """Returns this token as a plain string, suitable for storage.
