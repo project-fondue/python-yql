@@ -38,6 +38,11 @@ class YQLQueryTest(TestCase):
         params = ('fail')
         query.validate(params)
 
+    @raises(ValueError)
+    def test_requires_substitutions(self):
+        query = YQLQuery("SELECT * from foo where dog=@dog")
+        query.validate()
+
     def test_placeholder_regex_one(self):
         query = YQLQuery("SELECT * from foo where email='foo@foo.com'")
         placeholders = query.get_placeholder_keys()
