@@ -217,20 +217,25 @@ class YQLQuery(object):
         """Validate the query placeholders"""
         placeholders = set(self.get_placeholder_keys())
         if substitutions is not None:
-            if hasattr(substitutions, 'keys'):
-                if not placeholders:
-                    raise ValueError("Got a dictionary of substitutions but "
-                                     "the query doesn't have any placeholders")
-                elif set(placeholders) != set(substitutions.keys()):
-                    raise ValueError("Substitution keys don't match "
-                                     "the placeholders")
-            else:
-                raise ValueError("Substitutions must be a dictionary.")
-        else:
-            if placeholders:
-                raise ValueError("Query uses placeholders so a dictionary "
-                                 "of substitutions is required")
+            self._validate_substitutions(substitutions, placeholders)
+        elif placeholders:
+            raise ValueError("Query uses placeholders so a dictionary "
+                             "of substitutions is required")
         return True
+
+    def _validate_substitutions(self, substitutions, placeholders):
+        if hasattr(substitutions, 'keys'):
+            self._validate_substitutions_dictionary(placeholders, substitutions)
+        else:
+            raise ValueError("Substitutions must be a dictionary.")
+
+    def _validate_substitutions_dictionary(self, placeholders, substitutions):
+        if not placeholders:
+            raise ValueError("Got a dictionary of substitutions but "
+                             "the query doesn't have any placeholders")
+        if set(placeholders) != set(substitutions.keys()):
+            raise ValueError("Substitution keys don't match "
+                             "the placeholders")
 
 
 class Public(object):
