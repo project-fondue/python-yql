@@ -216,7 +216,7 @@ class YQLQuery(object):
     def validate(self, substitutions=None):
         """Validate the query placeholders"""
         placeholders = set(self.get_placeholder_keys())
-        if not substitutions is None:
+        if substitutions is not None:
             if hasattr(substitutions, 'keys'):
                 if not placeholders:
                     raise ValueError("Got a dictionary of substitutions but "
