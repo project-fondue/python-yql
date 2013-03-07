@@ -1,3 +1,6 @@
+* 0.7.6
+    * Update defaults for 3-legged to match 2-legged
+    * Remove old tests
 * 0.7.5
     * Fix installation issues.
 * 0.7.4

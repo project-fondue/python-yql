@@ -29,17 +29,15 @@ except ImportError:  # pragma: no cover
 
 
 __author__ = 'Stuart Colville'
-__version__ = '0.7.5'
+__version__ = '0.7.6'
 __all__ = ['Public', 'TwoLegged', 'ThreeLegged']
 
 
 QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
 
-
 REQUEST_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_request_token'
 ACCESS_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_token'
 AUTHORIZATION_URL = 'https://api.login.yahoo.com/oauth/v2/request_auth'
-
 
 PUBLIC_ENDPOINT = "query.yahooapis.com/v1/public/yql"
 PRIVATE_ENDPOINT = "query.yahooapis.com/v1/yql"
@@ -304,7 +302,8 @@ class Public(object):
         # Just in time change to https avoids
         # invalid oauth sigs
         if self.scheme == HTTPS_SCHEME:
-            url = url.replace(HTTP_SCHEME, HTTPS_SCHEME)
+            url = url.replace(HTTP_SCHEME, HTTPS_SCHEME, 1)
+
         yql_logger.debug("executed url: %s", url)
         http_method = yqlquery.get_http_method()
         if http_method in ["DELETE", "PUT", "POST"]:
@@ -320,6 +319,7 @@ class Public(object):
             yql_logger.debug("body: %s", data)
         else:
             resp, content = self.http.request(url, http_method)
+
         yql_logger.debug("http_method: %s", http_method)
         if resp.get('status') == '200':
             return YQLObj(json.loads(content))
@@ -421,9 +421,6 @@ class ThreeLegged(TwoLegged):
         """Override init to add consumer"""
         super(ThreeLegged, self).__init__(
                                     api_key, shared_secret, httplib2_inst)
-
-        self.scheme = HTTP_SCHEME
-        self.endpoint = PRIVATE_ENDPOINT
         self.consumer = oauth.Consumer(self.api_key, self.secret)
 
     def get_token_and_auth_url(self, callback_url=None):
