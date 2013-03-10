@@ -1,7 +1,6 @@
 """"Utility functions"""
 import re
 
-
 METHOD_MAP = (
     ("insert", "POST"),
     ("update", "PUT"),
@@ -23,13 +22,10 @@ def get_http_method(query):
 
     return http_method
 
-
 def clean_url(url):
     """Cleans up a uri/url"""
     url = url.replace("\n", "")
-    url = MULTI_PLUS.sub("+", url)
-    return url
-
+    return MULTI_PLUS.sub("+", url)
 
 def clean_query(query):
     """Cleans up a query"""

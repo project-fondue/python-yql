@@ -1,3 +1,5 @@
+* 0.7.7
+    * Refactor endpoints and oauth sigs to be based on scheme.
 * 0.7.6
     * Update defaults for 3-legged to match 2-legged
     * Remove old tests

@@ -29,7 +29,7 @@ except ImportError:  # pragma: no cover
 
 
 __author__ = 'Stuart Colville'
-__version__ = '0.7.6'
+__version__ = '0.7.7'
 __all__ = ['Public', 'TwoLegged', 'ThreeLegged']
 
 
@@ -38,12 +38,8 @@ QUERY_PLACEHOLDER = re.compile(r"[ =]@(?P<param>[a-z].*?\b)", re.IGNORECASE)
 REQUEST_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_request_token'
 ACCESS_TOKEN_URL = 'https://api.login.yahoo.com/oauth/v2/get_token'
 AUTHORIZATION_URL = 'https://api.login.yahoo.com/oauth/v2/request_auth'
-
-PUBLIC_ENDPOINT = "query.yahooapis.com/v1/public/yql"
-PRIVATE_ENDPOINT = "query.yahooapis.com/v1/yql"
-HTTP_SCHEME = "http:"
-HTTPS_SCHEME = "https:"
-
+PUBLIC_ENDPOINT = 'https://query.yahooapis.com/v1/public/yql'
+PRIVATE_ENDPOINT = 'https://query.yahooapis.com/v1/yql'
 
 yql_logger = get_logger()
 
@@ -251,25 +247,7 @@ class Public(object):
         self.api_key = api_key
         self.secret = shared_secret
         self.http = httplib2_inst or Http()
-        self.scheme = HTTPS_SCHEME
-        self.__endpoint = PUBLIC_ENDPOINT
-        self.uri = self.get_endpoint_uri()
-
-    def get_endpoint_uri(self):
-        """Get endpoint"""
-        return "http://%s" % self.endpoint
-
-    def get_endpoint(self):
-        """Gets the endpoint for requests"""
-        return self.__endpoint
-
-    def set_endpoint(self, value):
-        """Sets the endpoint and updates the uri"""
-        if value in (PRIVATE_ENDPOINT, PUBLIC_ENDPOINT):
-            self.__endpoint = value
-            self.uri = self.get_endpoint_uri()
-        else:
-            raise ValueError("Invalid endpoint: %s" % value)
+        self.endpoint = PUBLIC_ENDPOINT
 
     def get_query_params(self, query, params, **kwargs):
         """Get the query params and validate placeholders"""
@@ -291,7 +269,7 @@ class Public(object):
             query = YQLQuery(query)
         params = self.get_query_params(query, params, **kwargs)
         query_string = urlencode(params)
-        uri = '%s?%s' % (self.uri, query_string)
+        uri = '%s?%s' % (self.endpoint, query_string)
         uri = clean_url(uri)
         return uri
 
@@ -299,16 +277,10 @@ class Public(object):
         """Execute YQL query"""
         yqlquery = YQLQuery(query)
         url = self.get_uri(yqlquery, params, **kwargs)
-        # Just in time change to https avoids
-        # invalid oauth sigs
-        if self.scheme == HTTPS_SCHEME:
-            url = url.replace(HTTP_SCHEME, HTTPS_SCHEME, 1)
-
         yql_logger.debug("executed url: %s", url)
         http_method = yqlquery.get_http_method()
         if http_method in ["DELETE", "PUT", "POST"]:
             data = {"q": query}
-
             # Encode as json and set Content-Type header
             # to reflect we are sending JSON
             # Fixes LP: 629064
@@ -326,8 +298,6 @@ class Public(object):
         else:
             raise YQLError(resp, content)
 
-    endpoint = property(get_endpoint, set_endpoint)
-
 
 class TwoLegged(Public):
     """Two legged Auth is simple request which is signed prior to sending"""
@@ -336,9 +306,19 @@ class TwoLegged(Public):
         """Override init to ensure required args"""
         super(TwoLegged, self).__init__(api_key, shared_secret, httplib2_inst)
         self.endpoint = PRIVATE_ENDPOINT
-        self.scheme = HTTPS_SCHEME
         self.hmac_sha1_signature = oauth.SignatureMethod_HMAC_SHA1()
         self.plaintext_signature = oauth.SignatureMethod_PLAINTEXT()
+
+    def get_signature(self, url):
+        url_parts = urlparse(url)
+        scheme = url_parts.scheme
+        if scheme == "http":
+            sig = self.hmac_sha1_signature
+        elif scheme == "https":
+            sig = self.plaintext_signature
+        else:
+            raise ValueError("Invalid scheme: %s " % scheme)
+        return sig
 
     @staticmethod
     def get_base_params():
@@ -350,22 +330,22 @@ class TwoLegged(Public):
         params['oauth_timestamp'] = int(time.time())
         return params
 
-    def __two_legged_request(self, resource_url, parameters=None, method=None):
+    def __two_legged_request(self, parameters=None, method=None):
         """Sign a request for two-legged authentication"""
-
         params = self.get_base_params()
         if parameters:
             params.update(parameters)
-
+        url = self.endpoint
         yql_logger.debug("params: %s", params)
-        yql_logger.debug("resource_url: %s", resource_url)
+        yql_logger.debug("endpoint_url: %s", url)
         if not method:
             method = "GET"
 
         consumer = oauth.Consumer(self.api_key, self.secret)
-        request = oauth.Request(method=method, url=resource_url,
-                                                        parameters=params)
-        request.sign_request(self.hmac_sha1_signature, consumer, None)
+        request = oauth.Request(method=method, url=url, parameters=params)
+        sig = self.get_signature(url)
+        yql_logger.debug("signature: %s", sig)
+        request.sign_request(sig, consumer, None)
         return request
 
     def get_uri(self, query, params=None, **kwargs):
@@ -374,11 +354,10 @@ class TwoLegged(Public):
             query = YQLQuery(query)
         query_params = self.get_query_params(query, params, **kwargs)
         http_method = query.get_http_method()
-        request = self.__two_legged_request(self.uri,
-                       parameters=query_params, method=http_method)
-        uri = "%s?%s" % (self.uri, request.to_postdata())
-        uri = clean_url(uri)
-        return uri
+        request = self.__two_legged_request(parameters=query_params,
+                                            method=http_method)
+        url = request.to_url()
+        return clean_url(url)
 
 
 class ThreeLegged(TwoLegged):
@@ -561,23 +540,24 @@ class ThreeLegged(TwoLegged):
             query_params["oauth_yahoo_guid"] = getattr(token, "yahoo_guid")
 
         if not token:
-            raise ValueError("Without a token three-legged-auth cannot be"\
-                                                              " carried out")
+            raise ValueError("Without a token three-legged-auth cannot be"
+                                                            " carried out")
 
         yql_logger.debug("query_params: %s", query_params)
         http_method = query.get_http_method()
+        url = self.endpoint
         oauth_request = oauth.Request.from_consumer_and_token(
-                                        self.consumer, http_url=self.uri,
-                                        token=token, parameters=query_params,
-                                        http_method=http_method)
+                                    self.consumer, http_url=url,
+                                    token=token, parameters=query_params,
+                                    http_method=http_method)
         yql_logger.debug("oauth_request: %s", oauth_request)
         # Sign request
-        oauth_request.sign_request(
-                            self.hmac_sha1_signature, self.consumer, token)
-
+        sig = self.get_signature(url)
+        oauth_request.sign_request(sig, self.consumer, token)
         yql_logger.debug("oauth_signed_request: %s", oauth_request)
-        uri = "%s?%s" % (self.uri,  oauth_request.to_postdata())
-        return uri.replace('+', '%20').replace('%7E', '~')
+        url = oauth_request.to_url()
+        url = clean_url(url)
+        return url.replace('+', '%20').replace('%7E', '~')
 
 
 class YahooToken(oauth.Token):

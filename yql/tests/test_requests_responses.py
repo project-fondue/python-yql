@@ -163,7 +163,7 @@ class PublicStubbedRequestTest(StubbedHttpTestCase):
         query = 'SELECT * from foo'
         y = TestPublic(httplib2_inst=httplib2.Http())
         uri = y.execute(query)
-        self.assertEqual(uri, "http://query.yahooapis.com/v1/public/yql?q=SELECT+%2A+from+foo&format=json")
+        self.assertEqual(uri, "https://query.yahooapis.com/v1/public/yql?q=SELECT+%2A+from+foo&format=json")
 
     def test_env_for_public_yql(self):
         query = 'SELECT * from foo'
@@ -201,15 +201,27 @@ class TwoLeggedTest(TestCase):
     def test_get_two_legged_request_keys(self):
         y = yql.TwoLegged('test-api-key', 'test-secret')
         # Accessed this was because it's private
-        request =  y._TwoLegged__two_legged_request('http://google.com')
+        request =  y._TwoLegged__two_legged_request()
         self.assertEqual(set(['oauth_nonce', 'oauth_version', 'oauth_timestamp',
             'oauth_consumer_key', 'oauth_signature_method', 'oauth_body_hash',
             'oauth_version', 'oauth_signature']), set(request.keys()))
 
     def test_get_two_legged_request_values(self):
         y = yql.TwoLegged('test-api-key', 'test-secret')
+        y.endpoint = "https://query.yahooapis.com/v1/yql"
         # Accessed this was because it's private
-        request =  y._TwoLegged__two_legged_request('http://google.com')
+        request =  y._TwoLegged__two_legged_request()
+        self.assertTrue(y.endpoint.startswith("https"))
+        self.assertEqual(request['oauth_consumer_key'], 'test-api-key')
+        self.assertEqual(request['oauth_signature_method'], 'PLAINTEXT')
+        self.assertEqual(request['oauth_version'], '1.0')
+
+    def test_get_two_legged_request_values(self):
+        y = yql.TwoLegged('test-api-key', 'test-secret')
+        y.endpoint = "http://query.yahooapis.com/v1/yql"
+        # Accessed this was because it's private
+        request =  y._TwoLegged__two_legged_request()
+        self.assertTrue(y.endpoint.startswith("http"))
         self.assertEqual(request['oauth_consumer_key'], 'test-api-key')
         self.assertEqual(request['oauth_signature_method'], 'HMAC-SHA1')
         self.assertEqual(request['oauth_version'], '1.0')
@@ -217,8 +229,7 @@ class TwoLeggedTest(TestCase):
     def test_get_two_legged_request_param(self):
         y = yql.TwoLegged('test-api-key', 'test-secret')
         # Accessed this way because it's private
-        request =  y._TwoLegged__two_legged_request('http://google.com',
-                                                            {"test-param": "test"})
+        request =  y._TwoLegged__two_legged_request({"test-param": "test"})
         self.assertEqual(request.get('test-param'), 'test')
 
 
@@ -257,13 +268,15 @@ class ThreeLeggedTest(TestCase):
     def test_get_base_params(self):
         y = yql.ThreeLegged('test-api-key', 'test-secret')
         result = y.get_base_params()
-        self.assertEqual(set(['oauth_nonce', 'oauth_version', 'oauth_timestamp']),
+        self.assertEqual(set(['oauth_nonce', 'oauth_version',
+                                             'oauth_timestamp']),
                          set(result.keys()))
 
     @raises(ValueError)
     def test_raises_for_three_legged_with_no_token(self):
         query = 'SELECT * from foo'
-        y = TestThreeLegged('test-api-key', 'test-secret', httplib2_inst=httplib2.Http())
+        y = TestThreeLegged('test-api-key', 'test-secret',
+                                            httplib2_inst=httplib2.Http())
         y.execute(query)
 
 
@@ -295,7 +308,7 @@ class ThreeLeggedStubbedFromFileTest(StubbedHttpTestCase):
     @raises(ValueError)
     def test_three_legged_execution_raises_value_error_with_invalid_uri(self):
         y = yql.ThreeLegged('test','test2', httplib2_inst=httplib2.Http())
-        y.uri = "fail"
+        y.endpoint = "invalid"
         token = yql.YahooToken('tes1t', 'test2')
         y.execute("SELECT foo meh meh ", token=token)
 
