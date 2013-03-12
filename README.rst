@@ -1,4 +1,3 @@
-
 ========================================
 This project is not actively maintained.
 ========================================
@@ -49,10 +48,6 @@ Source-code
 
 Branches exist at https://github.com/project-fondue/python-yql
 
-Documentation
-=============
-
-Documentation can be found at http://python-yql.org/
 
 Contributions
 =============
