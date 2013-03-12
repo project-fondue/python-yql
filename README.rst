@@ -1,3 +1,12 @@
+
+========================================
+This project is not actively maintained.
+========================================
+
+*Looking back at this project it's not where I would like it to be and I don't have the necessary time to 
+update it so it remains here purely for posterity.*
+
+
 ==========
 Python YQL
 ==========
